@@ -21,9 +21,6 @@ very clear and intersting way to teach this and how AI cannot perform the same l
 
 Then came the moment that truly opened my eyes. I attended a workshop organised by Professor Hyndman's PhD student **Mitchell O’Hara-Wild’s “Forecasting with fable” at WOMBAT 2025** ([workshop link](https://workshop.nectric.com.au/fable-wombat2025/)). That session opened my eyes to the power of modern forecasting tools in R, especially the `fable` ecosystem.
 
-Around the same time, I previous manager recommend this book:
--  – a brilliant, practical guide to time series forecasting. for modelling and I have a chance to meet with professor Rob J Hyndman at Monash University  workshop I attended organized by his PhD studnet 
-
 This project is the intersection of everything I've learned: statistical rigour, practical tools, and the human judgment in this process.
 
 ## Project Goal
