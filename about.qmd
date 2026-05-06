@@ -2,8 +2,47 @@
 title: "About"
 ---
 
-About this site
+## About Me
 
-```{r}
-1 + 1
-```
+I'm an analytics professional with over seven years of experience turning complex data into clear, actionable insights. That experience taught me a crucial lesson: technical fluency is meaningless without a deep understanding of the problem, operational logic, and cross-functional collaboration. A reliable system isn't just about clean code or automated pipelines—it's built on communication and a shared understanding of the goal.
+
+My work has always been driven by a single question: How can information systems create tangible, positive impact for people with the least margin for error?
+
+
+## Why This Project?
+
+This project was born out of my strong interest in finance, statsitics, time series analysis forecasting and modelling. It started with my professors, gained momentum from a book, and came to life through a workshop.
+
+**Dr Haydar Demirhan** at **RMIT University**, whose teaching and encouragement pushed me to tackle a real-world forecasting project. He taught me something I'll never forget: AI can generate statistical output, but it cannot replicate human judgment. It cannot interpret evidence, weigh competing models, or make the informed decisions that drive genuine analysis forward.
+
+Around the same time, a former manager handed me a book that would become my practical bible **Forecasting: Principles and Practice (3rd ed.)** by Rob J Hyndman and George Athanasopoulos ([FPP3](https://otexts.com/fpp3/)), practical guide to time series forecasting.
+
+very clear and intersting way to teach this and how AI cannot perform the same level of human understasding on interprecting statistical output and collectie statisticl evidence and make inform deciosn to progress trhoug modelling process. 
+
+Then came the moment that truly opened my eyes. I attended a workshop organised by Professor Hyndman's PhD student **Mitchell O’Hara-Wild’s “Forecasting with fable” at WOMBAT 2025** ([workshop link](https://workshop.nectric.com.au/fable-wombat2025/)). That session opened my eyes to the power of modern forecasting tools in R, especially the `fable` ecosystem.
+
+Around the same time, I previous manager recommend this book:
+-  – a brilliant, practical guide to time series forecasting. for modelling and I have a chance to meet with professor Rob J Hyndman at Monash University  workshop I attended organized by his PhD studnet 
+
+This project is the intersection of everything I've learned: statistical rigour, practical tools, and the human judgment in this process.
+
+## Project Goal
+
+I chose to forecast ASX stocks for one reason: financial markets are challenging, dynamic, and full of fascinating patterns.
+
+This site is my attempt to:
+- Apply the methods I've learned
+- Share reproducible analysis with **Quarto** and R
+- Build a portfolio that proves my skills in forecasting and data science
+
+## Tools & Technologies
+
+- **R** and **Quarto** for reproducible reporting and this website
+- **GitHub Pages** for hosting
+
+## Let’s Connect
+
+- [LinkedIn](https://www.linkedin.com/in/yemunn-soe/)
+- [GitHub repository for this project](https://github.com/Yemunn-Soe/Forecasting-ASX-Stocks)
+
+Thanks for visiting!

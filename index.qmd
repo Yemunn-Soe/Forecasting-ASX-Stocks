@@ -267,6 +267,316 @@ test_residuals <- function(model, model_name, lag.max = 40) {
                          align   = "llcccc")
   )
 }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# E. FORECASTING FUNCTIONS (Functions 12-16) 
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Function 12: Benchmark forecasts (Naive, Seasonal Naive, Drift) ───────────
+# Creates simple benchmark forecasts for comparison against sophisticated models.
+# Returns a list with all benchmark forecast objects.
+benchmark_forecasts <- function(y_train, y_test, seasonal_period = 7) {
+  h <- length(y_test)
+  
+  # Naive method (last observation)
+  naive_fc <- forecast(naive(y_train, h = h))
+  
+  # Seasonal naive (if seasonal pattern exists)
+  snaive_fc <- tryCatch({
+    forecast(snaive(y_train, h = h))
+  }, error = function(e) NULL)
+  
+  # Drift method (linear extrapolation)
+  drift_fc <- rwf(y_train, drift = TRUE, h = h)
+  
+  # Mean method (average of all observations)
+  mean_fc <- forecast(meanf(y_train, h = h))
+  
+  list(
+    naive = naive_fc,
+    snaive = snaive_fc,
+    drift = drift_fc,
+    mean = mean_fc
+  )
+}
+
+# ── Function 13: Exponential Smoothing (ETS) forecast ─────────────────────────
+# Automatically selects error, trend, and seasonal components.
+# Returns forecast object with optional Box-Cox transformation.
+ets_forecast <- function(y_train, h, lambda = 0, biasadj = TRUE) {
+  # Fit ETS model
+  ets_model <- ets(y_train, lambda = lambda, biasadj = biasadj)
+  
+  # Generate forecasts
+  fc <- forecast(ets_model, h = h, lambda = lambda, biasadj = biasadj)
+  
+  # Return both model and forecast
+  list(
+    model = ets_model,
+    forecast = fc
+  )
+}
+
+# ── Function 14: Automatic ARIMA forecast (auto.arima) ────────────────────────
+# Automatically selects optimal ARIMA orders using stepwise search.
+# Provides a good baseline for comparing against manual ARIMA models.
+auto_arima_forecast <- function(y_train, h, seasonal = FALSE, lambda = 0, biasadj = TRUE) {
+  # Auto ARIMA with optional seasonality
+  auto_model <- auto.arima(y_train, 
+                           seasonal = seasonal,
+                           lambda = lambda,
+                           biasadj = biasadj,
+                           stepwise = FALSE,  # More thorough search
+                           approximation = FALSE)  # Exact likelihood
+  
+  # Generate forecasts
+  fc <- forecast(auto_model, h = h, lambda = lambda, biasadj = biasadj)
+  
+  list(
+    model = auto_model,
+    forecast = fc
+  )
+}
+
+# ── Function 15: TBATS forecast (multiple seasonalities) ──────────────────────
+# Handles complex seasonal patterns (e.g., weekly AND yearly).
+# Useful for data with multiple seasonal periods.
+tbats_forecast <- function(y_train, h, lambda = 0, biasadj = TRUE) {
+  # Fit TBATS model
+  tbats_model <- tbats(y_train, lambda = lambda, biasadj = biasadj)
+  
+  # Generate forecasts
+  fc <- forecast(tbats_model, h = h, lambda = lambda, biasadj = biasadj)
+  
+  list(
+    model = tbats_model,
+    forecast = fc
+  )
+}
+
+# ── Function 16: Neural Network (NNETAR) forecast ─────────────────────────────
+# Uses neural network with lagged inputs.
+# Requires enough data (typically > 50 observations) for effective training.
+nnetar_forecast <- function(y_train, h, P = 1, repeats = 20, lambda = 0, biasadj = TRUE) {
+  # P = number of seasonal periods (1 for non-seasonal)
+  # repeats = number of networks to average over
+  
+  nnet_model <- nnetar(y_train, 
+                       P = P,
+                       repeats = repeats,
+                       lambda = lambda,
+                       biasadj = biasadj)
+  
+  fc <- forecast(nnet_model, h = h, lambda = lambda, biasadj = biasadj)
+  
+  list(
+    model = nnet_model,
+    forecast = fc
+  )
+}
+
+# ── Function 17: STL decomposition forecast ───────────────────────────────────
+# Decomposes series into trend, seasonal, and remainder components,
+# then forecasts each component separately.
+stl_forecast <- function(y_train, h, seasonal_period = 7, lambda = 0, biasadj = TRUE) {
+  # STL decomposition with forecasting
+  stl_model <- stlm(y_train, 
+                    modelfunction = ar,  # AR model for remainder
+                    s.window = seasonal_period,
+                    lambda = lambda,
+                    biasadj = biasadj)
+  
+  fc <- forecast(stl_model, h = h, lambda = lambda, biasadj = biasadj)
+  
+  list(
+    model = stl_model,
+    forecast = fc
+  )
+}
+
+# ── Function 18: Forecast comparison table ────────────────────────────────────
+# Compares accuracy metrics across multiple forecasting methods.
+# Returns a formatted kable table.
+compare_forecasts <- function(forecast_list, y_test, caption = "Forecast Accuracy Comparison") {
+  # Extract accuracy metrics for each method
+  acc_df <- data.frame()
+  
+  for(name in names(forecast_list)) {
+    fc_obj <- forecast_list[[name]]
+    
+    # Check if forecast object has valid structure
+    if(!is.null(fc_obj) && !is.null(fc_obj$mean)) {
+      # Calculate accuracy against test set
+      acc <- accuracy(fc_obj, y_test)
+      
+      # Handle different accuracy output structures
+      if(is.matrix(acc)) {
+        acc <- acc[2, ]  # Test set metrics
+      }
+      
+      # Store metrics
+      temp_df <- data.frame(
+        Method = name,
+        RMSE = round(as.numeric(acc["RMSE"]), 4),
+        MAE = round(as.numeric(acc["MAE"]), 4),
+        MAPE = round(as.numeric(acc["MAPE"]), 4),
+        MASE = round(as.numeric(acc["MASE"]), 4),
+        stringsAsFactors = FALSE
+      )
+      acc_df <- rbind(acc_df, temp_df)
+    }
+  }
+  
+  # Order by RMSE (best first)
+  acc_df <- acc_df[order(acc_df$RMSE), ]
+  
+  # Add ranking
+  acc_df$Rank <- 1:nrow(acc_df)
+  acc_df <- acc_df[, c("Rank", "Method", "RMSE", "MAE", "MAPE", "MASE")]
+  
+  # Create kable table with highlighting
+  knitr::kable(acc_df, 
+               caption = caption,
+               align = "clccc",
+               row.names = FALSE) %>%
+    kableExtra::kable_styling(bootstrap_options = c("striped", "hover"))
+}
+
+# ── Function 19: Ensemble forecast (average of multiple methods) ──────────────
+# Combines forecasts using equal weights or custom weights.
+# Often outperforms individual methods.
+ensemble_forecast <- function(forecast_list, weights = NULL, y_test = NULL) {
+  # Get common time index
+  time_index <- time(forecast_list[[1]]$mean)
+  
+  # Collect all forecast means
+  fc_matrix <- NULL
+  for(fc in forecast_list) {
+    if(!is.null(fc)) {
+      fc_matrix <- cbind(fc_matrix, as.numeric(fc$mean))
+    }
+  }
+  
+  # Apply weights (equal if not specified)
+  if(is.null(weights)) {
+    weights <- rep(1 / ncol(fc_matrix), ncol(fc_matrix))
+  }
+  
+  # Calculate ensemble forecast
+  ensemble_mean <- rowSums(fc_matrix * weights)
+  
+  # Create forecast object with appropriate structure
+  ensemble_fc <- structure(
+    list(
+      mean = ts(ensemble_mean, 
+                start = start(forecast_list[[1]]$mean),
+                frequency = frequency(forecast_list[[1]]$mean)),
+      lower = NULL,  # Would need to bootstrap intervals
+      upper = NULL,
+      method = "Ensemble (equal weights)"
+    ),
+    class = "forecast"
+  )
+  
+  # Calculate prediction intervals if test set provided
+  if(!is.null(y_test)) {
+    errors <- ensemble_mean - as.numeric(y_test)
+    resid_sd <- sd(errors, na.rm = TRUE)
+    
+    ensemble_fc$lower <- cbind(ensemble_mean - 1.96 * resid_sd,
+                               ensemble_mean - 0.67 * resid_sd)
+    ensemble_fc$upper <- cbind(ensemble_mean + 1.96 * resid_sd,
+                               ensemble_mean + 0.67 * resid_sd)
+    colnames(ensemble_fc$lower) <- c("80%", "95%")
+    colnames(ensemble_fc$upper) <- c("80%", "95%")
+  }
+  
+  return(ensemble_fc)
+}
+
+# ── Function 20: Simple monotone forecast plot ───────────────────────────────
+plot_forecast_simple <- function(fc, y_train, y_test, model_name, h) {
+  
+  # Create base plot
+  plot(c(time(y_train), time(y_test)), 
+       c(y_train, y_test), type = "n",
+       main = paste(model_name, "Forecast - Next", h, "Days"),
+       ylab = "Price (AUD)", xlab = "Time")
+  
+  # PIs (steelblue with transparency)
+  polygon(c(time(fc$mean), rev(time(fc$mean))),
+          c(fc$lower[, "95%"], rev(fc$upper[, "95%"])),
+          col = adjustcolor("steelblue", alpha.f = 0.2), border = NA)
+  polygon(c(time(fc$mean), rev(time(fc$mean))),
+          c(fc$lower[, "80%"], rev(fc$upper[, "80%"])),
+          col = adjustcolor("steelblue", alpha.f = 0.4), border = NA)
+  
+  # Lines
+  lines(time(y_train), y_train, col = "black", lwd = 1.5)      # Training
+  lines(time(fc$mean), fc$mean, col = "steelblue4", lwd = 2)   # Forecast
+  lines(time(y_test), y_test, col = "red", lwd = 2)            # Actual
+  
+  # Simple legend
+  legend("topleft", 
+         legend = c("Training", "Forecast", "80% PI", "95% PI", "Test"),
+         col = c("black", "steelblue4", 
+                 adjustcolor("steelblue", alpha.f = 0.4),
+                 adjustcolor("steelblue", alpha.f = 0.2), 
+                 "red"),
+         lwd = c(1.5, 2, 8, 8, 2), bty = "n", cex = 0.7)
+}
+
+
+# ── Function 21: Plot multiple forecasts for comparison ───────────────────────
+# Creates a single plot with multiple forecast lines for visual comparison.
+plot_forecast_comparison <- function(forecast_list, y_train, y_test, 
+                                     title = "Forecast Comparison") {
+  # Get date/time info
+  train_end <- time(y_train)[length(y_train)]
+  test_time <- time(y_test)
+  combined_time <- c(time(y_train), test_time)
+  
+  # Create plot
+  plot(combined_time, c(y_train, y_test), 
+       type = "n",  # Don't plot yet
+       xlab = "Time", ylab = "Price (AUD)",
+       main = title, ylim = range(c(y_train, y_test, 
+                                    unlist(lapply(forecast_list, function(x) x$mean)), 
+                                    na.rm = TRUE)),
+       xaxt = "n")
+  
+  # Add time axis
+  axis(1, at = pretty(combined_time), labels = format(pretty(combined_time)))
+  grid(col = "lightgray")
+  
+  # Plot training data
+  lines(time(y_train), y_train, col = "black", lwd = 2)
+  
+  # Plot test data
+  lines(test_time, y_test, col = "red", lwd = 2, lty = 2)
+  
+  # Plot forecasts
+  colors <- c("blue", "green", "purple", "orange", "brown", "pink")
+  for(i in seq_along(forecast_list)) {
+    name <- names(forecast_list)[i]
+    fc <- forecast_list[[i]]
+    if(!is.null(fc) && !is.null(fc$mean)) {
+      lines(time(fc$mean), fc$mean, 
+            col = colors[(i-1) %% length(colors) + 1], 
+            lwd = 1.5, lty = 1)
+    }
+  }
+  
+  # Add legend
+  legend("topleft",
+         legend = c("Training", "Test (Actual)",
+                    names(forecast_list)),
+         col = c("black", "red", colors[1:length(forecast_list)]),
+         lty = c(1, 2, rep(1, length(forecast_list))),
+         lwd = 2,
+         cex = 0.7,
+         bty = "n")
+}
 ```
 
 # Introduction
