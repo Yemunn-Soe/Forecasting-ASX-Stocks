@@ -17,8 +17,6 @@ This project was born out of my strong interest in finance, statsitics, time ser
 
 Around the same time, a former manager handed me a book that would become my practical bible **Forecasting: Principles and Practice (3rd ed.)** by Rob J Hyndman and George Athanasopoulos ([FPP3](https://otexts.com/fpp3/)), practical guide to time series forecasting.
 
-very clear and intersting way to teach this and how AI cannot perform the same level of human understasding on interprecting statistical output and collectie statisticl evidence and make inform deciosn to progress trhoug modelling process. 
-
 Then came the moment that truly opened my eyes. I attended a workshop organised by Professor Hyndman's PhD student **Mitchell O’Hara-Wild’s “Forecasting with fable” at WOMBAT 2025** ([workshop link](https://workshop.nectric.com.au/fable-wombat2025/)). That session opened my eyes to the power of modern forecasting tools in R, especially the `fable` ecosystem.
 
 This project is the intersection of everything I've learned: statistical rigour, practical tools, and the human judgment in this process.
