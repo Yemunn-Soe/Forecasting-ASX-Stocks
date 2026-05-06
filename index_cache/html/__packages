@@ -11,3 +11,7 @@ ggplot2
 purrr
 tidyr
 magrittr
+tseries
+lmtest
+knitr
+kableExtra
