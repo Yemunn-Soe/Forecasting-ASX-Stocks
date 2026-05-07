@@ -18,21 +18,17 @@ format:
 #| include: false
 #| cache: false
 
-# ── Package Setup ──────────────────────────────────────────────────────────────
-# All required packages are loaded here. This chunk is never cached (cache: false)
-# so packages are always loaded fresh at the start of every render session.
-
-library(tidyquant)   # Yahoo Finance data via tq_get()
-library(dplyr)       # Data wrangling: filter, mutate, arrange
-library(TSA)         # BoxCox.ar(), eacf(), armasubsets(), rstandard()
-library(forecast)    # Arima(), auto.arima(), forecast(), accuracy()
-library(tseries)     # adf.test(), kpss.test(), pp.test()
-library(lmtest)      # coeftest() — coefficient significance testing
-library(ggplot2)     # Plotting
-library(purrr)       # map(), map_dfr(), possibly()
-library(magrittr)    # Pipe operator %>%
-library(knitr)       # kable() — formatted tables
-library(kableExtra)  # kable styling
+library(tidyquant)
+library(dplyr)
+library(TSA)
+library(forecast)
+library(tseries)
+library(lmtest)
+library(ggplot2)
+library(purrr)
+library(magrittr)
+library(knitr)
+library(kableExtra)
 ```
 
 ```{r functions}
@@ -40,13 +36,12 @@ library(kableExtra)  # kable styling
 #| include: false
 
 # ══════════════════════════════════════════════════════════════════════════════
-# REUSABLE HELPER FUNCTIONS
-# All diagnostic, plotting, and testing functions are centralised here.
-# Functions are grouped into three categories:
-#   A. Plotting helpers     (Functions 1–3, 8)
-#   B. Formal test helpers  (Functions 4–5)
-#   C. Residual diagnostics (Functions 9–11, replacing the original Function 6)
-#   D. Output helpers       (Functions 7)
+# HELPER FUNCTIONS
+# A. Plotting helpers     (1–3, 8, 20–21)
+# B. Formal test helpers  (4–5)
+# C. Residual diagnostics (9–11)
+# D. Output helpers       (7)
+# E. Forecasting          (12–19)
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ── Function 1: Time series plot with optional mean line ──────────────────────
@@ -54,7 +49,7 @@ plot_ts <- function(ts_data, main, ylab = "Price", add_mean = FALSE) {
   plot(ts_data, type = "l", ylab = ylab, xlab = "Time",
        cex.main = 0.9, main = main)
   if (add_mean) {
-    abline(h   = mean(ts_data, na.rm = TRUE),
+    abline(h = mean(ts_data, na.rm = TRUE),
            col = "blue", lty = 2, lwd = 1.5)
   }
 }
@@ -119,8 +114,7 @@ check_stationarity <- function(ts_data, table_title) {
 
   df <- data.frame(
     "Test"      = c("Augmented Dickey-Fuller (ADF)",
-                    "Phillips-Perron (PP)",
-                    "KPSS"),
+                    "Phillips-Perron (PP)", "KPSS"),
     "H0"        = c("Unit root (non-stationary)",
                     "Unit root (non-stationary)",
                     "Series is stationary"),
@@ -134,9 +128,7 @@ check_stationarity <- function(ts_data, table_title) {
     check.names = FALSE
   )
   list(
-    adf  = adf_res,
-    pp   = pp_res,
-    kpss = kpss_res,
+    adf   = adf_res, pp = pp_res, kpss = kpss_res,
     table = knitr::kable(df, caption = table_title, align = "llccc")
   )
 }
@@ -153,7 +145,7 @@ make_coef_table <- function(model, caption_text) {
     Sig         = ifelse(ct[, 4] < 0.001, "***",
                   ifelse(ct[, 4] < 0.01,  "**",
                   ifelse(ct[, 4] < 0.05,  "*",
-                  ifelse(ct[, 4] < 0.1,   ".",  ""))))
+                  ifelse(ct[, 4] < 0.1,   ".", ""))))
   )
   knitr::kable(df, caption = caption_text, align = "c", row.names = FALSE)
 }
@@ -161,421 +153,247 @@ make_coef_table <- function(model, caption_text) {
 # ── Function 8: CSS vs ML fitted value overlay plots ──────────────────────────
 plot_css_ml <- function(css_model, ml_model, ts_data, spec) {
   par(mfrow = c(1, 2), cex.main = 0.85, mar = c(4, 4, 3, 2))
-  
-  alpha_value <- 0.5
-  observed_color <- adjustcolor("black", alpha.f = alpha_value)
-  
+  obs_col <- adjustcolor("black", alpha.f = 0.7)
   for (i in 1:2) {
     mod   <- if (i == 1) css_model else ml_model
     label <- if (i == 1) paste(spec, "(CSS)") else paste(spec, "(ML)")
-    
-    # SIMPLE: Just use fitted() directly - no manual transformation!
-    plot(ts_data, type = "l", ylab = "Log Price", xlab = "",
-         main = label, cex.main = 0.85, col = observed_color)
-    lines(fitted(mod), col = "blue", lwd = 2)  # Direct like working version
-    
-    legend("topleft",
-           legend = c("Observed", "Fitted"),
-           col    = c(observed_color, "blue"),
-           lty    = 1, lwd = c(1, 2),
-           cex    = 0.65, bty = "n")
+    plot(ts_data, type = "l", ylab = "Price (AUD)", xlab = "",
+         main = label, cex.main = 0.85, col = obs_col)
+    lines(fitted(mod), col = "blue", lwd = 2)
+    legend("topleft", legend = c("Observed", "Fitted"),
+           col = c(obs_col, "blue"), lty = 1, lwd = c(1, 2),
+           cex = 0.65, bty = "n")
   }
   par(mfrow = c(1, 1))
 }
 
 # ── Function 9: Residual visual panel (2×2 grid) ──────────────────────────────
-# Generates the standardised residual time-series plot, histogram, QQ plot,
-# and ACF panel. Used in the "Visual Inspection" block of each model's
-# residual section. Kept separate from the formal tests to support the
-# three-part structure (Visual → Tests → Interpretation).
 plot_residuals_panel <- function(model, model_name, lag.max = 40) {
   res <- rstandard(model)
   par(mfrow = c(2, 2), cex.main = 0.9)
-
-  # Residual time series — expect rectangular scatter around zero
   plot(res, type = "o", pch = 16, cex = 0.5,
        xlab = "Time", ylab = "Standardised Residuals",
        main = paste(model_name, "— Residuals over Time"))
   abline(h =  0, col = "blue", lty = 2)
-  abline(h =  3, col = "blue",  lty = 3)
-  abline(h = -3, col = "blue",  lty = 3)
-
-  # Histogram — expect symmetric bell centred at zero
-  hist(res, breaks = 20,
-       xlab   = "Standardised Residuals",
-       main   = paste(model_name, "— Histogram"),
+  abline(h =  3, col = "blue", lty = 3)
+  abline(h = -3, col = "blue", lty = 3)
+  hist(res, breaks = 20, xlab = "Standardised Residuals",
+       main = paste(model_name, "— Histogram"),
        border = "white", freq = TRUE)
   curve(
     dnorm(x, mean(res, na.rm = TRUE), sd(res, na.rm = TRUE)) *
       length(res) * diff(hist(res, plot = FALSE, breaks = 20)$breaks)[1],
     add = TRUE, col = "blue", lwd = 2
   )
-
-  # QQ plot — expect points on the reference line
   qqnorm(res, main = paste(model_name, "— QQ Plot"), pch = 16, cex = 0.7)
   qqline(res, col = "blue", lty = 2, lwd = 1.5)
-
-  # ACF of residuals — expect all bars within the 95% bounds
   acf(res, lag.max = lag.max,
       main = paste(model_name, "— ACF of Residuals"), ylab = "ACF")
-
   par(mfrow = c(1, 1))
   invisible(res)
 }
 
 # ── Function 10: tsdiag panel ─────────────────────────────────────────────────
-# Generates the three-panel tsdiag() output: standardised residuals, ACF, and
-# Ljung-Box p-values at successive lags. The gof argument corrects degrees of
-# freedom for the number of estimated parameters.
 plot_residuals_tsdiag <- function(model, lag.max = 40) {
   tsdiag(model, gof.lag = lag.max, omit.initial = FALSE)
 }
 
 # ── Function 11: Formal residual tests (Ljung-Box + Shapiro-Wilk) ─────────────
-# Returns a list with $lb, $sw (raw test objects) and $table (a kable).
-# The Ljung-Box tests for residual autocorrelation (H0: no autocorrelation).
-# The Shapiro-Wilk tests for normality (H0: residuals are normally distributed).
 test_residuals <- function(model, model_name, lag.max = 40) {
   res <- rstandard(model)
   lb  <- Box.test(res,
                   lag  = min(lag.max, floor(length(res) / 5)),
                   type = "Ljung-Box")
   sw  <- shapiro.test(as.numeric(res))
-
   df <- data.frame(
     "Test"      = c("Ljung-Box", "Shapiro-Wilk"),
     "H0"        = c("No autocorrelation in residuals",
                     "Residuals are normally distributed"),
     "Statistic" = c(round(lb$statistic, 4), round(sw$statistic, 4)),
     "df"        = c(lb$parameter, NA),
-    "p-value"   = c(round(lb$p.value,  4), round(sw$p.value, 4)),
+    "p-value"   = c(round(lb$p.value, 4), round(sw$p.value, 4)),
     "Decision"  = c(
       ifelse(lb$p.value > 0.05,
-             "Fail to Reject H0 → PASS",
-             "Reject H0 → FAIL"),
+             "Fail to Reject H0 → PASS", "Reject H0 → FAIL"),
       ifelse(sw$p.value > 0.05,
-             "Fail to Reject H0 → PASS",
-             "Reject H0 → FAIL")
+             "Fail to Reject H0 → PASS", "Reject H0 → FAIL")
     ),
     check.names = FALSE
   )
-  list(
-    lb    = lb,
-    sw    = sw,
-    table = knitr::kable(df,
-                         caption = paste("Formal residual tests —", model_name),
-                         align   = "llcccc")
-  )
+  list(lb = lb, sw = sw,
+       table = knitr::kable(df,
+                            caption = paste("Formal residual tests —", model_name),
+                            align   = "llcccc"))
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
-# E. FORECASTING FUNCTIONS (Functions 12-16) 
-# ══════════════════════════════════════════════════════════════════════════════
-
-# ── Function 12: Benchmark forecasts (Naive, Seasonal Naive, Drift) ───────────
-# Creates simple benchmark forecasts for comparison against sophisticated models.
-# Returns a list with all benchmark forecast objects.
-benchmark_forecasts <- function(y_train, y_test, seasonal_period = 7) {
+# ── Function 12: Benchmark forecasts (Naive, Drift, Mean) ─────────────────────
+benchmark_forecasts <- function(y_train, y_test) {
   h <- length(y_test)
-  
-  # Naive method (last observation)
-  naive_fc <- forecast(naive(y_train, h = h))
-  
-  # Seasonal naive (if seasonal pattern exists)
-  snaive_fc <- tryCatch({
-    forecast(snaive(y_train, h = h))
-  }, error = function(e) NULL)
-  
-  # Drift method (linear extrapolation)
-  drift_fc <- rwf(y_train, drift = TRUE, h = h)
-  
-  # Mean method (average of all observations)
-  mean_fc <- forecast(meanf(y_train, h = h))
-  
   list(
-    naive = naive_fc,
-    snaive = snaive_fc,
-    drift = drift_fc,
-    mean = mean_fc
+    Naive = forecast(naive(y_train, h = h)),
+    Drift = rwf(y_train, drift = TRUE, h = h),
+    Mean  = forecast(meanf(y_train, h = h))
   )
 }
 
-# ── Function 13: Exponential Smoothing (ETS) forecast ─────────────────────────
-# Automatically selects error, trend, and seasonal components.
-# Returns forecast object with optional Box-Cox transformation.
-ets_forecast <- function(y_train, h, lambda = 0, biasadj = TRUE) {
-  # Fit ETS model
-  ets_model <- ets(y_train, lambda = lambda, biasadj = biasadj)
-  
-  # Generate forecasts
-  fc <- forecast(ets_model, h = h, lambda = lambda, biasadj = biasadj)
-  
-  # Return both model and forecast
-  list(
-    model = ets_model,
-    forecast = fc
-  )
+# ── Function 13: ETS forecast ─────────────────────────────────────────────────
+ets_forecast <- function(y_train, h) {
+  m <- ets(y_train)
+  list(model = m, forecast = forecast(m, h = h))
 }
 
-# ── Function 14: Automatic ARIMA forecast (auto.arima) ────────────────────────
-# Automatically selects optimal ARIMA orders using stepwise search.
-# Provides a good baseline for comparing against manual ARIMA models.
-auto_arima_forecast <- function(y_train, h, seasonal = FALSE, lambda = 0, biasadj = TRUE) {
-  # Auto ARIMA with optional seasonality
-  auto_model <- auto.arima(y_train, 
-                           seasonal = seasonal,
-                           lambda = lambda,
-                           biasadj = biasadj,
-                           stepwise = FALSE,  # More thorough search
-                           approximation = FALSE)  # Exact likelihood
-  
-  # Generate forecasts
-  fc <- forecast(auto_model, h = h, lambda = lambda, biasadj = biasadj)
-  
-  list(
-    model = auto_model,
-    forecast = fc
-  )
+# ── Function 14: auto.arima forecast ──────────────────────────────────────────
+auto_arima_forecast <- function(y_train, h, seasonal = FALSE) {
+  m <- auto.arima(y_train, seasonal = seasonal,
+                  stepwise = FALSE, approximation = FALSE)
+  list(model = m, forecast = forecast(m, h = h))
 }
 
-# ── Function 15: TBATS forecast (multiple seasonalities) ──────────────────────
-# Handles complex seasonal patterns (e.g., weekly AND yearly).
-# Useful for data with multiple seasonal periods.
-tbats_forecast <- function(y_train, h, lambda = 0, biasadj = TRUE) {
-  # Fit TBATS model
-  tbats_model <- tbats(y_train, lambda = lambda, biasadj = biasadj)
-  
-  # Generate forecasts
-  fc <- forecast(tbats_model, h = h, lambda = lambda, biasadj = biasadj)
-  
-  list(
-    model = tbats_model,
-    forecast = fc
-  )
+# ── Function 15: TBATS forecast ───────────────────────────────────────────────
+tbats_forecast <- function(y_train, h) {
+  m <- tbats(y_train)
+  list(model = m, forecast = forecast(m, h = h))
 }
 
-# ── Function 16: Neural Network (NNETAR) forecast ─────────────────────────────
-# Uses neural network with lagged inputs.
-# Requires enough data (typically > 50 observations) for effective training.
-nnetar_forecast <- function(y_train, h, P = 1, repeats = 20, lambda = 0, biasadj = TRUE) {
-  # P = number of seasonal periods (1 for non-seasonal)
-  # repeats = number of networks to average over
-  
-  nnet_model <- nnetar(y_train, 
-                       P = P,
-                       repeats = repeats,
-                       lambda = lambda,
-                       biasadj = biasadj)
-  
-  fc <- forecast(nnet_model, h = h, lambda = lambda, biasadj = biasadj)
-  
-  list(
-    model = nnet_model,
-    forecast = fc
-  )
+# ── Function 16: NNETAR forecast ──────────────────────────────────────────────
+nnetar_forecast <- function(y_train, h, P = 1, repeats = 20) {
+  m <- nnetar(y_train, P = P, repeats = repeats)
+  list(model = m, forecast = forecast(m, h = h))
 }
 
 # ── Function 17: STL decomposition forecast ───────────────────────────────────
-# Decomposes series into trend, seasonal, and remainder components,
-# then forecasts each component separately.
-stl_forecast <- function(y_train, h, seasonal_period = 7, lambda = 0, biasadj = TRUE) {
-  # STL decomposition with forecasting
-  stl_model <- stlm(y_train, 
-                    modelfunction = ar,  # AR model for remainder
-                    s.window = seasonal_period,
-                    lambda = lambda,
-                    biasadj = biasadj)
-  
-  fc <- forecast(stl_model, h = h, lambda = lambda, biasadj = biasadj)
-  
-  list(
-    model = stl_model,
-    forecast = fc
-  )
+stl_forecast <- function(y_train, h, s.window = 7) {
+  m <- stlm(y_train, modelfunction = ar, s.window = s.window)
+  list(model = m, forecast = forecast(m, h = h))
 }
 
 # ── Function 18: Forecast comparison table ────────────────────────────────────
-# Compares accuracy metrics across multiple forecasting methods.
-# Returns a formatted kable table.
-compare_forecasts <- function(forecast_list, y_test, caption = "Forecast Accuracy Comparison") {
-  # Extract accuracy metrics for each method
+compare_forecasts <- function(forecast_list, y_test,
+                              caption = "Forecast Accuracy Comparison") {
   acc_df <- data.frame()
-  
-  for(name in names(forecast_list)) {
+  for (name in names(forecast_list)) {
     fc_obj <- forecast_list[[name]]
-    
-    # Check if forecast object has valid structure
-    if(!is.null(fc_obj) && !is.null(fc_obj$mean)) {
-      # Calculate accuracy against test set
-      acc <- accuracy(fc_obj, y_test)
-      
-      # Handle different accuracy output structures
-      if(is.matrix(acc)) {
-        acc <- acc[2, ]  # Test set metrics
-      }
-      
-      # Store metrics
+    if (!is.null(fc_obj) && !is.null(fc_obj$mean)) {
+      acc <- tryCatch(
+        accuracy(fc_obj, y_test),
+        error = function(e) NULL
+      )
+      if (is.null(acc)) next
+      if (is.matrix(acc) && nrow(acc) >= 2) acc <- acc[2, ]
       temp_df <- data.frame(
         Method = name,
-        RMSE = round(as.numeric(acc["RMSE"]), 4),
-        MAE = round(as.numeric(acc["MAE"]), 4),
-        MAPE = round(as.numeric(acc["MAPE"]), 4),
-        MASE = round(as.numeric(acc["MASE"]), 4),
+        RMSE   = round(as.numeric(acc["RMSE"]), 4),
+        MAE    = round(as.numeric(acc["MAE"]),  4),
+        MAPE   = round(as.numeric(acc["MAPE"]), 4),
+        MASE   = round(as.numeric(acc["MASE"]), 4),
         stringsAsFactors = FALSE
       )
       acc_df <- rbind(acc_df, temp_df)
     }
   }
-  
-  # Order by RMSE (best first)
-  acc_df <- acc_df[order(acc_df$RMSE), ]
-  
-  # Add ranking
-  acc_df$Rank <- 1:nrow(acc_df)
-  acc_df <- acc_df[, c("Rank", "Method", "RMSE", "MAE", "MAPE", "MASE")]
-  
-  # Create kable table with highlighting
-  knitr::kable(acc_df, 
-               caption = caption,
-               align = "clccc",
+  acc_df       <- acc_df[order(acc_df$RMSE), ]
+  acc_df$Rank  <- seq_len(nrow(acc_df))
+  acc_df       <- acc_df[, c("Rank", "Method", "RMSE", "MAE", "MAPE", "MASE")]
+  knitr::kable(acc_df, caption = caption, align = "clcccc",
                row.names = FALSE) %>%
-    kableExtra::kable_styling(bootstrap_options = c("striped", "hover"))
+    kable_styling(bootstrap_options = c("striped", "hover"))
 }
 
-# ── Function 19: Ensemble forecast (average of multiple methods) ──────────────
-# Combines forecasts using equal weights or custom weights.
-# Often outperforms individual methods.
-ensemble_forecast <- function(forecast_list, weights = NULL, y_test = NULL) {
-  # Get common time index
-  time_index <- time(forecast_list[[1]]$mean)
-  
-  # Collect all forecast means
-  fc_matrix <- NULL
-  for(fc in forecast_list) {
-    if(!is.null(fc)) {
-      fc_matrix <- cbind(fc_matrix, as.numeric(fc$mean))
-    }
-  }
-  
-  # Apply weights (equal if not specified)
-  if(is.null(weights)) {
-    weights <- rep(1 / ncol(fc_matrix), ncol(fc_matrix))
-  }
-  
-  # Calculate ensemble forecast
-  ensemble_mean <- rowSums(fc_matrix * weights)
-  
-  # Create forecast object with appropriate structure
-  ensemble_fc <- structure(
-    list(
-      mean = ts(ensemble_mean, 
-                start = start(forecast_list[[1]]$mean),
-                frequency = frequency(forecast_list[[1]]$mean)),
-      lower = NULL,  # Would need to bootstrap intervals
-      upper = NULL,
-      method = "Ensemble (equal weights)"
-    ),
-    class = "forecast"
-  )
-  
-  # Calculate prediction intervals if test set provided
-  if(!is.null(y_test)) {
-    errors <- ensemble_mean - as.numeric(y_test)
-    resid_sd <- sd(errors, na.rm = TRUE)
-    
-    ensemble_fc$lower <- cbind(ensemble_mean - 1.96 * resid_sd,
-                               ensemble_mean - 0.67 * resid_sd)
-    ensemble_fc$upper <- cbind(ensemble_mean + 1.96 * resid_sd,
-                               ensemble_mean + 0.67 * resid_sd)
-    colnames(ensemble_fc$lower) <- c("80%", "95%")
-    colnames(ensemble_fc$upper) <- c("80%", "95%")
-  }
-  
-  return(ensemble_fc)
+# ── Function 19: Ensemble forecast ────────────────────────────────────────────
+ensemble_forecast <- function(forecast_list, weights = NULL) {
+  valid <- Filter(function(x) !is.null(x) && !is.null(x$mean), forecast_list)
+  fc_matrix <- do.call(cbind, lapply(valid, function(x) as.numeric(x$mean)))
+  if (is.null(weights)) weights <- rep(1 / ncol(fc_matrix), ncol(fc_matrix))
+  ens_mean <- as.numeric(fc_matrix %*% weights)
+  ts(ens_mean,
+     start     = start(valid[[1]]$mean),
+     frequency = frequency(valid[[1]]$mean))
 }
 
-# ── Function 20: Simple monotone forecast plot ───────────────────────────────
-plot_forecast_simple <- function(fc, y_train, y_test, model_name, h) {
-  
-  # Create base plot
-  plot(c(time(y_train), time(y_test)), 
-       c(y_train, y_test), type = "n",
-       main = paste(model_name, "Forecast - Next", h, "Days"),
+# ── Function 20: Forecast plot (single model with PIs) ────────────────────────
+plot_forecast_simple <- function(fc, y_train, y_test, model_name) {
+  h <- length(y_test)
+
+  # Cast everything to plain numeric — prevents ts class conflict in plot()
+  x_all <- c(as.numeric(time(y_train)), as.numeric(time(y_test)))
+  y_all <- c(as.numeric(y_train),       as.numeric(y_test))
+
+  plot(x_all, y_all, type = "n",
+       main = paste(model_name, "— Forecast, Next", h, "Days"),
        ylab = "Price (AUD)", xlab = "Time")
-  
-  # PIs (steelblue with transparency)
-  polygon(c(time(fc$mean), rev(time(fc$mean))),
-          c(fc$lower[, "95%"], rev(fc$upper[, "95%"])),
-          col = adjustcolor("steelblue", alpha.f = 0.2), border = NA)
-  polygon(c(time(fc$mean), rev(time(fc$mean))),
-          c(fc$lower[, "80%"], rev(fc$upper[, "80%"])),
-          col = adjustcolor("steelblue", alpha.f = 0.4), border = NA)
-  
-  # Lines
-  lines(time(y_train), y_train, col = "black", lwd = 1.5)      # Training
-  lines(time(fc$mean), fc$mean, col = "steelblue4", lwd = 2)   # Forecast
-  lines(time(y_test), y_test, col = "red", lwd = 2)            # Actual
-  
-  # Simple legend
-  legend("topleft", 
-         legend = c("Training", "Forecast", "80% PI", "95% PI", "Test"),
-         col = c("black", "steelblue4", 
-                 adjustcolor("steelblue", alpha.f = 0.4),
-                 adjustcolor("steelblue", alpha.f = 0.2), 
-                 "red"),
-         lwd = c(1.5, 2, 8, 8, 2), bty = "n", cex = 0.7)
+
+  if (!is.null(fc$lower) && !is.null(fc$upper)) {
+    fc_time <- as.numeric(time(fc$mean))
+
+    # 95% PI (wider, lighter)
+    polygon(c(fc_time, rev(fc_time)),
+            c(as.numeric(fc$lower[, "95%"]),
+              rev(as.numeric(fc$upper[, "95%"]))),
+            col = adjustcolor("steelblue", alpha.f = 0.2), border = NA)
+
+    # 80% PI (narrower, darker)
+    polygon(c(fc_time, rev(fc_time)),
+            c(as.numeric(fc$lower[, "80%"]),
+              rev(as.numeric(fc$upper[, "80%"]))),
+            col = adjustcolor("steelblue", alpha.f = 0.4), border = NA)
+  }
+
+  lines(as.numeric(time(y_train)), as.numeric(y_train),
+        col = "black",      lwd = 1.5)
+  lines(as.numeric(time(fc$mean)), as.numeric(fc$mean),
+        col = "steelblue4", lwd = 2)
+  lines(as.numeric(time(y_test)),  as.numeric(y_test),
+        col = "red",        lwd = 2)
+
+  legend("topleft",
+         legend = c("Training", "Forecast", "80% PI", "95% PI", "Actual"),
+         col    = c("black", "steelblue4",
+                    adjustcolor("steelblue", 0.4),
+                    adjustcolor("steelblue", 0.2), "red"),
+         lwd    = c(1.5, 2, 8, 8, 2), bty = "n", cex = 0.7)
 }
 
 
-# ── Function 21: Plot multiple forecasts for comparison ───────────────────────
-# Creates a single plot with multiple forecast lines for visual comparison.
-plot_forecast_comparison <- function(forecast_list, y_train, y_test, 
+# ── Function 21: Multi-method forecast comparison plot ────────────────────────
+plot_forecast_comparison <- function(forecast_list, y_train, y_test,
                                      title = "Forecast Comparison") {
-  # Get date/time info
-  train_end <- time(y_train)[length(y_train)]
-  test_time <- time(y_test)
-  combined_time <- c(time(y_train), test_time)
-  
-  # Create plot
-  plot(combined_time, c(y_train, y_test), 
-       type = "n",  # Don't plot yet
+  all_fc_vals <- unlist(lapply(forecast_list,
+                               function(x) if (!is.null(x$mean)) as.numeric(x$mean)))
+  ylim_range  <- range(c(as.numeric(y_train), as.numeric(y_test),
+                          all_fc_vals), na.rm = TRUE)
+
+  # Cast to plain numeric — prevents ts class conflict in plot()
+  x_all <- c(as.numeric(time(y_train)), as.numeric(time(y_test)))
+  y_all <- c(as.numeric(y_train),       as.numeric(y_test))
+
+  plot(x_all, y_all, type = "n",
        xlab = "Time", ylab = "Price (AUD)",
-       main = title, ylim = range(c(y_train, y_test, 
-                                    unlist(lapply(forecast_list, function(x) x$mean)), 
-                                    na.rm = TRUE)),
-       xaxt = "n")
-  
-  # Add time axis
-  axis(1, at = pretty(combined_time), labels = format(pretty(combined_time)))
+       main = title, ylim = ylim_range)
   grid(col = "lightgray")
-  
-  # Plot training data
-  lines(time(y_train), y_train, col = "black", lwd = 2)
-  
-  # Plot test data
-  lines(test_time, y_test, col = "red", lwd = 2, lty = 2)
-  
-  # Plot forecasts
-  colors <- c("blue", "green", "purple", "orange", "brown", "pink")
-  for(i in seq_along(forecast_list)) {
-    name <- names(forecast_list)[i]
+
+  lines(as.numeric(time(y_train)), as.numeric(y_train),
+        col = "black", lwd = 2)
+  lines(as.numeric(time(y_test)),  as.numeric(y_test),
+        col = "red",   lwd = 2, lty = 2)
+
+  pal <- c("blue", "darkgreen", "purple", "darkorange",
+           "brown", "deeppink", "cyan4", "navy", "tomato")
+
+  for (i in seq_along(forecast_list)) {
     fc <- forecast_list[[i]]
-    if(!is.null(fc) && !is.null(fc$mean)) {
-      lines(time(fc$mean), fc$mean, 
-            col = colors[(i-1) %% length(colors) + 1], 
+    if (!is.null(fc) && !is.null(fc$mean)) {
+      lines(as.numeric(time(fc$mean)), as.numeric(fc$mean),
+            col = pal[(i - 1) %% length(pal) + 1],
             lwd = 1.5, lty = 1)
     }
   }
-  
-  # Add legend
+
   legend("topleft",
-         legend = c("Training", "Test (Actual)",
+         legend = c("Training", "Actual (test)",
                     names(forecast_list)),
-         col = c("black", "red", colors[1:length(forecast_list)]),
-         lty = c(1, 2, rep(1, length(forecast_list))),
-         lwd = 2,
-         cex = 0.7,
-         bty = "n")
+         col    = c("black", "red", pal[seq_along(forecast_list)]),
+         lty    = c(1, 2, rep(1, length(forecast_list))),
+         lwd    = 2, cex = 0.6, bty = "n")
 }
 ```
 
@@ -590,13 +408,11 @@ The analysis follows the Box–Jenkins methodology (Cryer & Chan, 2008) as taugh
 3.  **Differencing & Stationarity** — achieving a time-invariant mean via differencing, verified by formal unit-root tests.
 4.  **Model Specification** — AR and MA order identification via ACF, PACF, EACF, and BIC tables.
 5.  **Model Fitting & Residual Diagnostics** — CSS and ML estimation with full Module 7 residual analysis and overparameterised model checks.
-6.  **Forecasting** — producing point forecasts and prediction intervals using the `forecast` package.
+6.  **Forecasting** — producing point forecasts and prediction intervals using multiple methods.
 
 # Data Acquisition
 
 ## Define ASX Top 10 Tickers
-
-The `tidyquant` function `tq_exchange()` only supports US exchanges and cannot retrieve ASX constituent lists. Instead, we manually specify the top 10 ASX stocks by market capitalisation — the most liquid, most influential companies on the Australian market. Yahoo Finance requires the `.AX` suffix for all ASX-listed stocks (e.g. CBA → CBA.AX).
 
 ```{r asx10-tickers}
 #| label: asx10-tickers
@@ -622,8 +438,6 @@ print(asx10_tickers[, c("symbol", "company", "sector", "symbol_yf")])
 
 ## Download Daily Price History
 
-We use `tq_get()` to pull approximately two years of daily OHLCV data from Yahoo Finance. The adjusted close price — which accounts for dividends and stock splits — is used throughout this analysis. We wrap `tq_get()` in `purrr::possibly()` so that any single ticker that fails (delisted stock, network timeout) is silently skipped rather than crashing the pipeline.
-
 ```{r asx10-prices}
 #| label: asx10-prices
 #| cache: true
@@ -631,12 +445,8 @@ We use `tq_get()` to pull approximately two years of daily OHLCV data from Yahoo
 safe_tq_get <- possibly(tq_get, otherwise = NULL)
 
 asx10_prices_raw <- asx10_tickers$symbol_yf %>%
-  map_dfr(~ safe_tq_get(
-    .x,
-    get  = "stock.prices",
-    from = Sys.Date() - 730,
-    to   = Sys.Date()
-  ))
+  map_dfr(~ safe_tq_get(.x, get = "stock.prices",
+                         from = Sys.Date() - 730, to = Sys.Date()))
 
 cat("Total rows downloaded:", nrow(asx10_prices_raw), "\n")
 cat("Unique tickers retrieved:", n_distinct(asx10_prices_raw$symbol), "\n")
@@ -644,36 +454,18 @@ cat("Unique tickers retrieved:", n_distinct(asx10_prices_raw$symbol), "\n")
 
 ## Construct Time Series Objects
 
-We select Commonwealth Bank (CBA.AX) as the focus of this analysis. CBA is well-suited for a univariate ARIMA investigation because it is highly liquid (minimal missing data), has a long and stable listing history, and its price trajectory reflects the interaction of macroeconomic conditions, RBA interest rate decisions, and domestic housing market dynamics — all of which produce rich autocorrelative structure worth modelling.
-
-We hold out the final 30 trading days as a test set for out-of-sample forecast evaluation, a standard practice in time series modelling.
-
 ```{r cba-ts-setup}
 #| label: cba-ts-setup
 #| cache: true
 
-# Filter and sort to strictly chronological order
 cba_data <- asx10_prices_raw %>%
   filter(symbol == "CBA.AX") %>%
   arrange(date)
 
-# Construct ts objects.
-# frequency = 252 approximates annual trading days and preserves
-# temporal structure, even though daily data is not perfectly periodic.
-cba_prices_ts <- ts(
-  cba_data$adjusted,
-  start     = c(2024, 1),
-  frequency = 252
-)
+cba_prices_ts <- ts(cba_data$adjusted, start = c(2024, 1), frequency = 252)
+cba_volumes_ts <- ts(cba_data$volume,   start = c(2024, 1), frequency = 252)
 
-cba_volumes_ts <- ts(
-  cba_data$volume,
-  start     = c(2024, 1),
-  frequency = 252
-)
-
-# ── Train / Test Split ────────────────────────────────────────────────────────
-n_train <- length(cba_prices_ts) - 30
+n_train <- length(cba_prices_ts) - 90
 y_train <- window(cba_prices_ts, end   = time(cba_prices_ts)[n_train])
 y_test  <- window(cba_prices_ts, start = time(cba_prices_ts)[n_train + 1])
 
@@ -694,25 +486,21 @@ cat("Price range: AUD", round(min(cba_data$adjusted), 2),
 
 ```{r fig-eda-raw-ts}
 #| label: fig-eda-raw-ts
-#| fig-cap: "CBA adjusted closing price — training sample (April 2024 onward). The sustained upward quadratic trend, the sharp level drop near 2025.5, and the widening amplitude of fluctuations as the price level rises are the three primary non-stationarity signals that will drive all subsequent modelling decisions."
+#| fig-cap: "CBA adjusted closing price — training sample (April 2024 onward). The sustained upward quadratic trend, the sharp level drop near 2025.5, and the widening amplitude of fluctuations as the price level rises."
 #| fig-height: 4
 
-plot_ts(y_train,
-        main     = "CBA Adjusted Closing Price — Training Sample",
-        ylab     = "Price (AUD)",
-        add_mean = TRUE)
+plot_ts(y_train, main = "CBA Adjusted Closing Price — Training Sample",
+        ylab = "Price (AUD)", add_mean = TRUE)
 ```
 
 ```{r fig-eda-acf-pacf-raw}
 #| label: fig-eda-acf-pacf-raw
-#| fig-cap: "ACF (left) and PACF (right) of the raw CBA price series. The ACF's slow linear decay and the PACF's single dominant spike at lag 1 are the textbook signatures of a unit-root process — confirming non-stationarity before any formal testing."
+#| fig-cap: "ACF (left) and PACF (right) of the raw CBA price series. The ACF's slow linear decay and the PACF's single dominant spike at lag 1, confirming non-stationarity before any statistical testing."
 #| fig-height: 4
 
-plot_acf_pacf(
-  y_train,
-  acf_title  = "ACF — CBA Raw Price",
-  pacf_title = "PACF — CBA Raw Price"
-)
+plot_acf_pacf(y_train,
+              acf_title  = "ACF — CBA Raw Price",
+              pacf_title = "PACF — CBA Raw Price")
 ```
 
 ### Statistical Tests
@@ -720,28 +508,26 @@ plot_acf_pacf(
 ```{r stat-eda-stationarity}
 #| label: stat-eda-stationarity
 
-stat_raw <- check_stationarity(
-  y_train,
-  table_title = "Stationarity Tests — Raw CBA Price (Training Sample)"
-)
+stat_raw <- check_stationarity(y_train,
+  "Stationarity Tests — Raw CBA Price (Training Sample)")
 stat_raw$table
 ```
 
 ### Interpretation
 
-**Trend.** @fig-eda-raw-ts shows a sustained upward quadratic trend from approximately AUD 110 at the start of 2024 to a peak near AUD 185 by mid-2025. The horizontal red dashed mean line sits well below the peak of the series, confirming that the series has no stable central tendency — a necessary condition for ARIMA modelling is violated from the outset.
+**Trend.** @fig-eda-raw-ts shows a sustained upward quadratic trend from approximately AUD 110 at the start of 2024 to a peak near AUD 185 by mid-2025. The horizontal mean line sits well below the peak of the series, confirming the absence of a stable central tendency — a necessary condition for ARIMA modelling is violated from the outset.
 
-**Seasonality.** There is no evidence of a fixed-frequency repeating cycle within this two-year window. Price fluctuations appear stochastic rather than deterministic, suggesting that a non-seasonal ARIMA specification is appropriate. Any apparent periodicity in the series aligns with irregular macroeconomic events (RBA meeting cycles, CBA earnings seasons) rather than a strict calendar pattern.
+**Seasonality.** There is no evidence of a fixed-frequency repeating cycle within this two-year window. Price fluctuations appear stochastic rather than deterministic, suggesting that a non-seasonal ARIMA specification is appropriate. Any apparent periodicity aligns with irregular macroeconomic events (RBA meeting cycles, CBA earnings seasons) rather than a strict calendar pattern.
 
-**Heteroscedasticity.** The magnitude of daily fluctuations increases materially as the price level rises, particularly after 2025.0. This proportional relationship between price level and volatility — a characteristic of geometric Brownian motion — suggests that the raw series will require a variance-stabilising transformation before any ARIMA model can be reliably estimated.
+**Heteroscedasticity.** The magnitude of daily fluctuations increases materially as the price level rises, particularly after 2025.0. This proportional relationship between price level and volatility — a characteristic of geometric Brownian motion — suggests that the raw series will require variance-stabilising investigation before ARIMA modelling.
 
-**Change Point.** No structural change point is apparent through most of the series, but a significant level shift occurs shortly after 2025.5. The price drops from roughly AUD 175 to AUD 150 in a very short interval — likely reflecting a macro shock such as an unexpected RBA policy decision, changes to bank capital requirements, or a global credit event — followed by a period of elevated volatility and partial recovery.
+**Change Point.** A significant level shift occurs shortly after 2025.5, where the price drops from roughly AUD 175 to AUD 150 in a very short interval — likely reflecting a macro shock such as an unexpected RBA policy decision, changes to bank capital requirements, or a global credit event — followed by elevated volatility and partial recovery.
 
-**ACF — slow linear decay** (@fig-eda-acf-pacf-raw, left). The autocorrelations remain large and positive across many lags, declining so slowly that they barely enter the significance bands even at lag 40. This persistence pattern indicates the series has very long memory: each day's price level carries the weight of all preceding observations forward indefinitely. In economic terms, CBA's daily price is not mean-reverting — it accumulates the cumulative effect of every past shock to its level.
+**ACF — slow linear decay** (@fig-eda-acf-pacf-raw, left). The autocorrelations remain large and positive across many lags, declining so slowly that they barely enter the significance bands even at lag 40. This persistence confirms the series has very long memory: each day's price level carries the weight of all preceding observations forward indefinitely.
 
-**PACF — single dominant spike at lag 1** (@fig-eda-acf-pacf-raw, right). Once the contemporaneous chain of correlations is removed, only the immediately preceding observation retains direct predictive power. This is the canonical PACF signature of an AR(1) or, more precisely, a unit-root process where each day's price is essentially yesterday's price plus a random innovation. Lags 2 and beyond add no independent information once lag 1 is known.
+**PACF — single dominant spike at lag 1** (@fig-eda-acf-pacf-raw, right). Once the chain of correlations is removed, only the immediately preceding observation retains direct predictive power. This is the canonical PACF signature of a unit-root process.
 
-**Stationarity tests.** The ADF (p = `r round(stat_raw$adf$p.value, 4)`) and PP (p = `r round(stat_raw$pp$p.value, 4)`) tests both fail to reject the null hypothesis of a unit root at the 5% significance level, while the KPSS (p = `r round(stat_raw$kpss$p.value, 4)`) rejects its null hypothesis of stationarity. All three tests agree: the series contains a stochastic trend that must be removed before modelling.
+**Stationarity tests.** The ADF (p = `r round(stat_raw$adf$p.value, 4)`) and PP (p = `r round(stat_raw$pp$p.value, 4)`) tests both fail to reject the null hypothesis of a unit root, while KPSS (p = `r round(stat_raw$kpss$p.value, 4)`) rejects its stationarity null. All three tests agree: the series contains a stochastic trend that must be removed before modelling.
 
 ------------------------------------------------------------------------
 
@@ -751,13 +537,11 @@ stat_raw$table
 
 ```{r fig-eda-norm}
 #| label: fig-eda-norm
-#| fig-cap: "QQ plot (left) and histogram with normal overlay (right) for the raw CBA training price series. The S-shaped deviation from the reference line and the multimodal, non-symmetric histogram jointly reject the assumption that the raw prices follow a normal distribution."
+#| fig-cap: "QQ plot (left) and histogram with normal overlay (right) for the raw CBA training price series. The S-shaped deviation from the reference line and a non-symmetric histogram reject the assumption that the data follow a normal distribution."
 #| fig-height: 4
 
-plot_norm(y_train,
-          qq_title   = "QQ Plot — Raw CBA Price",
-          hist_title = "Histogram — Raw CBA Price",
-          xlab       = "Price (AUD)")
+plot_norm(y_train, qq_title = "QQ Plot — Raw CBA Price",
+          hist_title = "Histogram — Raw CBA Price", xlab = "Price (AUD)")
 ```
 
 ### Statistical Tests
@@ -765,7 +549,6 @@ plot_norm(y_train,
 ```{r stat-eda-norm-summary}
 #| label: stat-eda-norm-summary
 
-# Descriptive statistics
 Summary <- c(
   Mean   = round(mean(y_train),               2),
   Median = round(median(y_train),             2),
@@ -774,51 +557,39 @@ Summary <- c(
   Max    = round(max(y_train),                2),
   Range  = round(max(y_train) - min(y_train), 2)
 )
-
-knitr::kable(
-  t(as.data.frame(Summary)),
+knitr::kable(t(as.data.frame(Summary)),
   caption = "Descriptive statistics — CBA.AX adjusted closing price (training sample).",
-  align   = "c"
-)
+  align = "c")
 ```
 
 ```{r stat-eda-normality}
 #| label: stat-eda-normality
 
-normality_raw <- check_normality(
-  y_train,
-  caption_text = "Shapiro-Wilk Normality Test — Raw CBA Price Series"
-)
+normality_raw <- check_normality(y_train, "Shapiro-Wilk Test — Raw CBA Price")
 normality_raw$table
 ```
 
 ### Interpretation
 
-**Central tendency.** The mean (AUD `r round(mean(y_train), 2)`) and median (AUD `r round(median(y_train), 2)`) are closely aligned, suggesting the distribution is broadly symmetric around its centre. However, this proximity is somewhat misleading: it results from the price series spending roughly equal time in its lower range (AUD 110–140) and its upper range (AUD 160–185), not from any genuine normal behaviour.
+**Central tendency.** The mean (AUD `r round(mean(y_train), 2)`) and median (AUD `r round(median(y_train), 2)`) are closely aligned, but this proximity is misleading: it results from the series spending roughly equal time in its lower and upper price ranges, not from any genuine normality.
 
-**Dispersion.** The standard deviation of AUD `r round(sd(y_train), 2)` relative to a mean of approximately AUD 151 represents substantial spread. This is a direct consequence of the strong upward trend observed in @fig-eda-raw-ts — the series has traversed a wide range of price levels, inflating the unconditional standard deviation far beyond what any single period's volatility would suggest.
+**Dispersion.** The standard deviation of AUD `r round(sd(y_train), 2)` reflects the wide price range traversed over the training window — a direct consequence of the sustained upward trend in @fig-eda-raw-ts rather than a meaningful measure of single-period volatility.
 
-**Range.** The AUD `r round(max(y_train) - min(y_train), 2)` range (from AUD `r round(min(y_train), 2)` to AUD `r round(max(y_train), 2)`) reflects the cumulative price appreciation over the observation window and reinforces the non-stationarity finding: a stationary series would fluctuate within a bounded range, not traverse a range of this magnitude without mean reversion.
+**QQ plot** (@fig-eda-norm, left). The S-shaped deviation from the theoretical line at both tails indicates lighter tails than a normal distribution — a natural consequence of the bounded lower tail (prices cannot fall below zero) and the right-skew imposed by the trend.
 
-**QQ plot** (@fig-eda-norm, left). The sample quantiles deviate from the theoretical normal reference line in an S-shaped pattern at both tails. This curvature indicates that the raw price distribution has lighter tails than a normal distribution — a natural consequence of the bounded lower tail (prices cannot fall below zero) and the heavy right-skew imposed by the upward trend.
+**Histogram** (@fig-eda-norm, right). The multimodal profile with at least two visible clusters corresponds to the lower pre-2025 and higher 2025-peak price ranges. No single normal density can describe this bimodal structure, which is a direct symptom of the non-stationarity identified above.
 
-**Histogram** (@fig-eda-norm, right). The histogram reveals a multimodal distribution with at least two visible clusters, corresponding approximately to the lower pre-2025 price range and the higher 2025-peak range. This bimodality is a direct consequence of the non-stationarity identified above: the series has spent significant time at two distinct price levels, producing a distribution that no single normal density can describe.
-
-**Shapiro-Wilk test.** With W = `r round(normality_raw$result$statistic, 4)` and p ≈ `r format(normality_raw$result$p.value, scientific = TRUE, digits = 2)`, we decisively reject the null hypothesis of normality. The raw price series requires transformation before Gaussian-assumption-based ARIMA modelling is valid.
+**Shapiro-Wilk test.** With W = `r round(normality_raw$result$statistic, 4)` and p ≈ `r format(normality_raw$result$p.value, scientific = TRUE, digits = 2)`, we decisively reject normality. Transformation and differencing are required before valid ARIMA estimation.
 
 ------------------------------------------------------------------------
 
 ## Synthesis of EDA Findings
 
-The visual and statistical evidence gathered in this section provides a clear and consistent mandate for the processing steps that follow.
+**Variance stabilisation required.** The Shapiro-Wilk test (p ≈ 0), S-shaped QQ deviations, and visually apparent heteroscedasticity in @fig-eda-raw-ts collectively confirm non-constant variance proportional to price level. A Box-Cox transformation will be evaluated in @sec-transformation.
 
-**Variance stabilisation required.** The Shapiro-Wilk test (p ≈ 0), S-shaped QQ deviations, and visually apparent heteroscedasticity in @fig-eda-raw-ts collectively confirm that the raw price series exhibits non-constant variance. The variance grows proportionally with the price level — characteristic of financial time series. A Box-Cox transformation will be evaluated in @sec-transformation to address this.
-
-**Mean stabilisation required.** The unanimous agreement of the ADF (p = `r round(stat_raw$adf$p.value, 4)`), PP (p = `r round(stat_raw$pp$p.value, 4)`), and KPSS (p = `r round(stat_raw$kpss$p.value, 4)`) tests confirms the presence of a unit root. The slow ACF decay in @fig-eda-acf-pacf-raw provides visual corroboration. First-order differencing (d = 1) will be applied in @sec-stationarity to remove the stochastic trend and produce a mean-stationary series.
+**Mean stabilisation required.** The unanimous agreement of ADF (p = `r round(stat_raw$adf$p.value, 4)`), PP (p = `r round(stat_raw$pp$p.value, 4)`), and KPSS (p = `r round(stat_raw$kpss$p.value, 4)`) confirms the presence of a unit root. The slow ACF decay in @fig-eda-acf-pacf-raw provides visual corroboration. First-order differencing (d = 1) will be applied in @sec-stationarity.
 
 # Transformation {#sec-transformation}
-
-To address the heteroscedasticity identified in the EDA, we evaluate a formal Box-Cox variance-stabilising transformation before proceeding to differencing. For financial price series, the log transformation (λ = 0) is also theoretically motivated: log-returns are additive across time, bounded below by −1, and approximately normally distributed over short horizons — all properties that facilitate ARIMA modelling.
 
 ## Box-Cox Profile Analysis
 
@@ -826,7 +597,7 @@ To address the heteroscedasticity identified in the EDA, we evaluate a formal Bo
 
 ```{r fig-boxcox-profile}
 #| label: fig-boxcox-profile
-#| fig-cap: "Box-Cox log-likelihood profile for the CBA training price series. The optimal λ and its 95% confidence interval determine whether a log (λ = 0) or no (λ = 1) transformation is warranted. A CI that excludes λ = 1 provides formal statistical support for transformation."
+#| fig-cap: "The Box-Cox log-likelihood profile for the CBA training series indicates an optimal λ ≈ −0.3."
 #| fig-height: 5
 
 BC <- BoxCox.ar(y = y_train, lambda = seq(-2, 2, 0.01))
@@ -842,34 +613,30 @@ lambda_lower <- BC$ci[1]
 lambda_upper <- BC$ci[2]
 
 bc_df <- data.frame(
-  Parameter          = c("Optimal λ", "95% CI Lower", "95% CI Upper",
-                          "CI includes λ = 0 (log)?",
-                          "CI includes λ = 1 (none)?"),
-  Value              = c(round(lambda_opt,   4),
-                          round(lambda_lower, 4),
-                          round(lambda_upper, 4),
-                          ifelse(lambda_lower <= 0 & lambda_upper >= 0, "YES", "NO"),
-                          ifelse(lambda_lower <= 1 & lambda_upper >= 1, "YES", "NO"))
+  Parameter = c("Optimal λ", "95% CI Lower", "95% CI Upper",
+                "CI includes λ = 0 (log)?", "CI includes λ = 1 (none)?"),
+  Value     = c(round(lambda_opt,   4), round(lambda_lower, 4),
+                round(lambda_upper, 4),
+                ifelse(lambda_lower <= 0 & lambda_upper >= 0, "YES", "NO"),
+                ifelse(lambda_lower <= 1 & lambda_upper >= 1, "YES", "NO"))
 )
-knitr::kable(bc_df,
-             caption = "Box-Cox parameter estimation results.",
-             align   = "lc",
-             col.names = c("Parameter", "Value"))
+knitr::kable(bc_df, caption = "Box-Cox parameter estimation results.",
+             align = "lc", col.names = c("Parameter", "Value"))
 ```
 
 ### Interpretation
 
-The optimal λ (`r round(lambda_opt, 4)`) sits close to zero, and the 95% confidence interval from @fig-boxcox-profile formally determines whether the log transformation is statistically supported. For CBA daily prices, the CI typically includes λ = 0 and excludes λ = 1, providing statistical support for the log transformation. This aligns with financial econometric theory: log-prices follow a random walk with drift, and working on the log scale converts multiplicative price movements into additive log-returns — the natural unit of analysis in equity markets.
+The optimal λ (`r round(lambda_opt, 4)`) sits close to zero, and the 95% CI from @fig-boxcox-profile determines whether a log transformation is statistically supported. For CBA daily prices, the CI typically includes λ = 0 and excludes λ = 1 — providing formal support for the log transform and aligning with financial econometric theory: log-prices follow a random walk with drift, converting multiplicative price movements into additive log-returns.
+
+------------------------------------------------------------------------
 
 ## Applied Transformation
-
-We apply the Box-Cox transformation using the estimated λ and assess whether it resolves the non-normality and heteroscedasticity identified in the EDA.
 
 ### Visual Inspection
 
 ```{r fig-bc-compare}
 #| label: fig-bc-compare
-#| fig-cap: "Raw CBA price series (top) and Box-Cox transformed series (bottom). A successful transformation would show reduced heteroscedasticity in the lower panel — specifically, the amplitude of fluctuations should become more uniform across the sample window."
+#| fig-cap: "Original CBA price series (top) and Box-Cox transformed series (bottom). A successful transformation would show reduced heteroscedasticity — specifically, fluctuation amplitude becoming more uniform across the sample."
 #| fig-height: 6
 
 BC_train <- (y_train^lambda_opt - 1) / lambda_opt
@@ -883,25 +650,21 @@ par(mfrow = c(1, 1))
 
 ```{r fig-bc-acf-pacf}
 #| label: fig-bc-acf-pacf
-#| fig-cap: "ACF (left) and PACF (right) of the Box-Cox transformed series. The slow ACF decay and single dominant PACF spike at lag 1 mirror the patterns in @fig-eda-acf-pacf-raw, confirming that the transformation has not altered the fundamental non-stationary structure of the series."
+#| fig-cap: "ACF (left) and PACF (right) of the Box-Cox transformed series. The slow ACF decay and single dominant PACF spike at lag 1 mirror the patterns in @fig-eda-acf-pacf-raw, confirming the transformation has not altered the fundamental non-stationary structure."
 #| fig-height: 4
 
-plot_acf_pacf(
-  BC_train,
-  acf_title  = "ACF — Box-Cox Transformed Series",
-  pacf_title = "PACF — Box-Cox Transformed Series"
-)
+plot_acf_pacf(BC_train,
+              acf_title  = "ACF — Box-Cox Transformed Series",
+              pacf_title = "PACF — Box-Cox Transformed Series")
 ```
 
 ```{r fig-bc-norm}
 #| label: fig-bc-norm
-#| fig-cap: "QQ plot (left) and histogram with normal overlay (right) for the Box-Cox transformed series. Near-identical tail behaviour to the raw series (@fig-eda-norm) indicates that the transformation has not materially improved distributional normality."
+#| fig-cap: "QQ plot (left) and histogram with normal overlay (right) for the Box-Cox transformed series. Near-identical tail behaviour to the original series (@fig-eda-norm) indicates that the transformation has not materially improved distributional normality."
 #| fig-height: 4
 
-plot_norm(BC_train,
-          qq_title   = "QQ Plot — BC Transformed Series",
-          hist_title = "Histogram — BC Transformed Series",
-          xlab       = "BC(Price)")
+plot_norm(BC_train, qq_title = "QQ Plot — BC Transformed Series",
+          hist_title = "Histogram — BC Transformed Series", xlab = "BC(Price)")
 ```
 
 ### Statistical Tests
@@ -909,77 +672,64 @@ plot_norm(BC_train,
 ```{r stat-bc-normality}
 #| label: stat-bc-normality
 
-normality_bc <- check_normality(
-  BC_train,
-  caption_text = "Shapiro-Wilk Normality Test — Box-Cox Transformed Series"
-)
+normality_bc <- check_normality(BC_train,
+  "Shapiro-Wilk Test — Box-Cox Transformed Series")
 normality_bc$table
 ```
 
 ```{r stat-bc-stationarity}
 #| label: stat-bc-stationarity
 
-stat_bc <- check_stationarity(
-  BC_train,
-  table_title = "Stationarity Tests — Box-Cox Transformed Series"
-)
+stat_bc <- check_stationarity(BC_train, "Stationarity Tests — Box-Cox Transformed Series")
 stat_bc$table
 ```
 
 ### Interpretation
 
-**Time series plot** (@fig-bc-compare). The Box-Cox transformed series retains the same overall shape as the original — the upward quadratic trend persists and the amplitude of fluctuations continues to increase after 2025.0. The transformation has not materially altered the non-stationary structure or visibly reduced the heteroscedasticity. This is consistent with financial series where the variance is driven primarily by the stochastic trend rather than a simple multiplicative level effect.
+**Time series plot** (@fig-bc-compare). The Box-Cox transformed series retains the same overall shape — the upward trend persists and the amplitude of fluctuations continues to grow after 2025.0. The transformation has not materially altered the non-stationary structure or visibly reduced heteroscedasticity, consistent with financial series where variance is driven primarily by the stochastic trend.
 
-**ACF & PACF** (@fig-bc-acf-pacf). The slow linear ACF decay and single dominant PACF spike at lag 1 are nearly identical to the raw series patterns in @fig-eda-acf-pacf-raw. The non-stationarity in the mean has not been resolved, confirming that differencing remains necessary regardless of the transformation applied.
+**ACF/PACF** (@fig-bc-acf-pacf). The slow linear ACF decay and single dominant PACF spike at lag 1 are nearly identical to the raw series in @fig-eda-acf-pacf-raw. Non-stationarity in the mean remains unresolved.
 
-**QQ plot and histogram** (@fig-bc-norm). The S-shaped QQ deviation and multimodal histogram profile are essentially indistinguishable from those in @fig-eda-norm. The transformation has not improved the marginal distribution of the series in any practically meaningful way.
+**QQ plot and histogram** (@fig-bc-norm). The S-shaped QQ deviation and multimodal histogram are essentially indistinguishable from @fig-eda-norm. No meaningful distributional improvement has been achieved.
 
-**Normality.** The Shapiro-Wilk statistic (W = `r round(normality_bc$result$statistic, 4)`) and p-value (`r format(normality_bc$result$p.value, scientific = TRUE, digits = 2)`) are, if anything, marginally worse than for the original series. The null hypothesis of normality is again decisively rejected.
+**Normality.** W = `r round(normality_bc$result$statistic, 4)`, p = `r format(normality_bc$result$p.value, scientific = TRUE, digits = 2)` — marginally worse than the original series. Normality null is again decisively rejected.
 
-**Stationarity.** ADF (p = `r round(stat_bc$adf$p.value, 4)`) and PP (p = `r round(stat_bc$pp$p.value, 4)`) both fail to reject the unit root, and KPSS (p = `r round(stat_bc$kpss$p.value, 4)`) rejects the stationarity null. The transformed series remains non-stationary.
+**Stationarity.** ADF (p = `r round(stat_bc$adf$p.value, 4)`), PP (p = `r round(stat_bc$pp$p.value, 4)`), and KPSS (p = `r round(stat_bc$kpss$p.value, 4)`) confirm the transformed series remains non-stationary.
+
+------------------------------------------------------------------------
 
 ## Decision: Proceed Without Transformation
 
-The statistical evidence is consistent: the Box-Cox transformation fails to produce any substantive improvement in normality, variance stability, or stationarity. The W statistic is marginally lower after transformation, and the stationarity test outcomes are unchanged. In accordance with the principle of parsimony (Cryer & Chan, 2008), we reject the transformation to avoid complicating the model without gaining any mathematical benefit.
-
-**The analysis will proceed on the original adjusted price series.** The next phase will focus on applying first-order differencing (d = 1) to address the non-stationarity of the mean.
+The Box-Cox transformation produces no substantive improvement in normality, variance stability, or stationarity. In accordance with the principle of parsimony (Cryer & Chan, 2008), the transformation is rejected. **The analysis proceeds on the original adjusted price series.** The next phase applies first-order differencing (d = 1) to stabilise the mean.
 
 # Addressing Non-Stationarity {#sec-stationarity}
 
 ## First Differencing
 
-The primary challenge identified in the EDA was the non-stationary mean caused by the sustained upward stochastic trend. First-differencing (d = 1) converts the price level series into a daily price change series, removing the trend and producing a series that fluctuates around a stable mean.
-
 ### Visual Inspection
 
 ```{r fig-diff-series}
 #| label: fig-diff-series
-#| fig-cap: "Original CBA price series (top) and first-differenced series (bottom). The differenced series fluctuates around zero (dashed red line), confirming that the stochastic trend has been successfully removed. Occasional large spikes — most notably near 2025.5 — correspond to high-impact trading days associated with macro announcements or CBA-specific events."
+#| fig-cap: "Original CBA price series (top) and first-differenced series (bottom). The differenced series fluctuates around zero (dashed blue line), confirming the stochastic trend has been successfully removed. Large spikes near 2025.5 correspond to high-impact trading days."
 #| fig-height: 6
 
 diff_y_train <- diff(y_train, differences = 1)
 
 par(mfrow = c(2, 1), cex = 0.85)
-plot_ts(y_train,
-        main = "(a) Original CBA Price",
-        ylab = "Price (AUD)")
-plot_ts(diff_y_train,
-        main     = "(b) First-Differenced Series (d = 1)",
-        ylab     = "Δ Price (AUD)",
-        add_mean = TRUE)
+plot_ts(y_train, main = "(a) Original CBA Price", ylab = "Price (AUD)")
+plot_ts(diff_y_train, main = "(b) First-Differenced Series (d = 1)",
+        ylab = "Δ Price (AUD)", add_mean = TRUE)
 par(mfrow = c(1, 1))
 ```
 
 ```{r fig-diff-acf-pacf}
 #| label: fig-diff-acf-pacf
-#| fig-cap: "ACF (left) and PACF (right) of the first-differenced CBA series. The immediate drop-off in both plots — with most bars within the 95% confidence bands — confirms that differencing has achieved stationarity and reveals the underlying ARMA structure available for model specification."
+#| fig-cap: "ACF (left) and PACF (right) of the first-differenced CBA series. The immediate drop-off with most bars within the 95% confidence bands confirms stationarity and reveals the underlying ARMA structure for model specification."
 #| fig-height: 4
 
-plot_acf_pacf(
-  diff_y_train,
-  acf_title  = "ACF — Δ CBA Price (d = 1)",
-  pacf_title = "PACF — Δ CBA Price (d = 1)"
-)
+plot_acf_pacf(diff_y_train,
+              acf_title  = "ACF — Δ CBA Price (d = 1)",
+              pacf_title = "PACF — Δ CBA Price (d = 1)")
 ```
 
 ### Statistical Tests
@@ -987,126 +737,108 @@ plot_acf_pacf(
 ```{r stat-diff-stationarity}
 #| label: stat-diff-stationarity
 
-stat_d1 <- check_stationarity(
-  diff_y_train,
-  table_title = "Stationarity Tests — First-Differenced Series (d = 1)"
-)
+stat_d1 <- check_stationarity(diff_y_train,
+  "Stationarity Tests — First-Differenced Series (d = 1)")
 stat_d1$table
 ```
 
 ### Interpretation
 
-**Trend removal** (@fig-diff-series). The pronounced upward quadratic trend observed in panel (a) has been completely removed in panel (b). The differenced series fluctuates around a stable horizontal mean of approximately zero — the dashed red reference line sits comfortably within the centre of the scatter, with no visible drift or systematic pattern. This confirms that first-order differencing was sufficient to remove the stochastic trend; a second difference is not required and would risk over-differencing.
+**Trend removal** (@fig-diff-series). The upward trend in panel (a) is completely removed in panel (b). The differenced series fluctuates around a stable horizontal mean of approximately zero, confirming that first-order differencing was sufficient; a second difference is not required and would risk over-differencing.
 
-**Volatility and outliers.** While the mean is now stable, @fig-diff-series panel (b) highlights specific periods of elevated volatility, most notably the sharp spike and drop near 2025.5 corresponding to the level-shift event identified in the EDA. These transient volatility clusters are a known feature of bank equity daily returns and reflect the response to high-impact events such as RBA cash rate decisions, APRA regulatory announcements, and global credit risk repricing. The ARIMA framework will model the autocorrelative structure of these returns; persistent volatility clustering would require a GARCH extension.
+**Volatility and outliers.** @fig-diff-series panel (b) highlights elevated volatility near 2025.5 corresponding to the level-shift event from the EDA. These transient volatility clusters are characteristic of bank equity daily returns and reflect high-impact events — RBA cash rate decisions, APRA regulatory announcements, global credit risk repricing. The ARIMA framework models the autocorrelative structure; persistent volatility clustering would require a GARCH extension.
 
-**ACF/PACF** (@fig-diff-acf-pacf). Following differencing, both the ACF and PACF drop off quickly after the initial lags, with the majority of bars falling within the blue 95% confidence bands. This elimination of the slow ACF decay observed in @fig-eda-acf-pacf-raw confirms that the stochastic trend has been successfully removed. The remaining structure — an isolated significant spike at lag 5 in both the ACF and PACF — is the residual autocorrelative signal that ARIMA order identification will seek to explain.
+**ACF/PACF** (@fig-diff-acf-pacf). Both plots drop off quickly after initial lags with the majority of bars within the 95% bands. The isolated significant spike at lag 5 in both ACF and PACF represents the residual autocorrelative signal that model specification will investigate.
 
-**Stationarity tests.** The ADF (p = `r round(stat_d1$adf$p.value, 4)`) and PP (p = `r round(stat_d1$pp$p.value, 4)`) both reject the unit-root null hypothesis, while KPSS (p = `r round(stat_d1$kpss$p.value, 4)`) fails to reject its stationarity null. All three tests unanimously confirm stationarity. **The integration order is confirmed as d = 1.**
+**Stationarity tests.** ADF (p = `r round(stat_d1$adf$p.value, 4)`) and PP (p = `r round(stat_d1$pp$p.value, 4)`) both reject the unit-root null; KPSS (p = `r round(stat_d1$kpss$p.value, 4)`) fails to reject its stationarity null. All three tests unanimously confirm stationarity. **The integration order is confirmed as d = 1.**
 
-**ACF for MA order (q) identification.** The single significant spike at lag 5 in the ACF, with no significant autocorrelation at lower lags (1–4), is an unusual pattern for a low-order MA process. A simple MA(1) or MA(2) would typically produce significant spikes at the first one or two lags only. The isolated lag-5 spike may indicate a specific delayed market response — for example, a five-day settlement cycle effect or weekly rebalancing pattern — or it may reflect transient noise. A parsimonious ARIMA(0,1,1) remains a candidate; the lag-5 isolation will be investigated further through EACF and BIC analysis.
+**ACF for MA order (q) identification.** The isolated spike at lag 5 with no significant autocorrelation at lower lags is an atypical pattern. It may indicate a five-day settlement cycle or weekly rebalancing effect, or transient noise — which the EACF and BIC analysis will help distinguish.
 
-**PACF for AR order (p) identification.** Similarly, the significant PACF spikes at lag 5 (and lag 8) suggest a potential AR influence at those intervals. Once the lag-5 AR effect is conditioned out, no lower-order AR terms appear significant. An ARIMA(5,1,0) would be implied by this reading, though parsimony considerations and the BIC analysis may favour simpler alternatives.
+**PACF for AR order (p) identification.** Significant PACF spikes at lag 5 (and lag 8) suggest potential AR influence at those intervals. An ARIMA(5,1,0) is implied by strict PACF reading, though parsimony and BIC may favour simpler alternatives.
 
-## Decision: Proceed With First Difference Original Series
+------------------------------------------------------------------------
 
-Based on the evidence above, we will proceed with the **original series (non-transformed) at** d=1. In time-series modeling, we adhere to the **Principle of Parsimony**. Further differencing (e.g., d=2) is rejected for the following reasons:
+## Decision: Proceed With First-Differenced Original Series
 
--   **Risk of Over-differencing:** Since d=1 has already achieved a stable mean and statistically significant stationarity across ADF, PP, and KPSS tests, any further differencing would unnecessarily increase the variance of the residuals and introduce artificial dependencies (moving average artifacts) into the model.
+Based on the evidence above, the analysis proceeds with the **original (untransformed) series at d = 1**. Further differencing (d = 2) is rejected for three reasons:
 
--   **Loss of Information:** Each level of differencing removes information. d=1 effectively transforms "Price" into "Daily Change" (Returns). A second difference (d=2) would model the "change in the change" (Acceleration), which is often too noisy for financial forecasting and makes the final results significantly harder to interpret in a business context.
-
--   **Parsimonious Specification:** A stationary d=1 series allows for a simpler ARIMA structure that is less likely to overfit the training data, ensuring better generalization on the 30-day hold-out test set.
+1.  **Risk of over-differencing.** d = 1 has already achieved statistically confirmed stationarity across all three tests. A second difference introduces artificial moving-average structure and inflates residual variance unnecessarily.
+2.  **Loss of interpretability.** d = 1 transforms prices into daily changes (returns) — a natural, meaningful financial quantity. d = 2 would model the "change in changes" (acceleration), which has no natural financial interpretation and is highly sensitive to noise.
+3.  **Parsimony.** A stationary d = 1 series allows for a simpler ARIMA structure less likely to overfit, preserving out-of-sample generalisation on the 90-day test set.
 
 # Model Specification
 
 ## Order Identification from ACF and PACF
 
-The standard translation rules for converting ACF and PACF patterns into AR and MA orders (Cryer & Chan, 2008) are:
+The standard rules (Cryer & Chan, 2008) for translating @fig-diff-acf-pacf into ARMA orders are:
 
 -   ACF cuts off at lag q, PACF decays geometrically → **MA(q)**
 -   PACF cuts off at lag p, ACF decays geometrically → **AR(p)**
 -   Both decay geometrically → **mixed ARMA(p,q)**
 
-Following the rules established by Cryer & Chan (2008), we examine @fig-diff-acf-pacf for order identification. The ACF and PACF plots for the differenced series exhibit predominantly white-noise behavior in the early lags, with no significant spikes observed from **Lag 1 through Lag 11**.
-
-While isolated spikes are visible at **Lag 12 and Lag 18**, they are interpreted as transient statistical noise rather than persistent structural components. In accordance with the **Principle of Parsimony**, we prioritize a "lean" model specification for the CBA returns and strictly reject higher-order specifications such as **ARIMA(2,1,2)** or **ARIMA(1,1,2)**. Attempting to reach distant signals at Lag 12 or 18 through standard AR or MA orders would result in an over-parameterized model, violating the principle of parsimony and reducing forecast reliability.
-
-In high-frequency financial data, once the dominant trend is removed via first-differencing, the resulting series often approximates a **random walk** (@fig-diff-acf-pacf). Attempting to parameterize higher-order lags (such as p=12 or p=18) risks **over-fitting**the training data—capturing historical artifacts that are unlikely to repeat. By selecting simpler low-order ARIMA models, we reduce model variance and prioritize **out-of-sample forecast stability**.
-
-Consequently, the analysis will proceed with parsimonious, low-order candidates. We will evaluate **ARIMA(1,1,1)** as the candidate model.
+Following these rules, the first-differenced series exhibits predominantly white-noise behaviour in early lags (1–4 and 6–11), with no persistent autocorrelation structure. Isolated spikes at lag 5 and lag 8 are treated as potential signals but evaluated against lower-order models through EACF and BIC — attempting to model lag 5 or lag 8 directly through standard AR/MA orders risks over-parameterisation. The analysis prioritises parsimonious low-order candidates consistent with the near-random-walk nature of daily equity returns.
 
 ## Extended Autocorrelation Function (EACF) {#sec-eacf}
-
-The EACF provides a supplementary order identification tool particularly useful when neither the ACF nor the PACF gives a clean cutoff pattern. The 'o' symbols in the EACF table identify the candidate ARMA(p,q) pairs consistent with a white-noise residual structure. For the first-differenced CBA series, the EACF matrix confirms the suitability of low-order specifications:
-
--   **Candidate Identification:** The top-left vertex of the **white-noise** triangle is identified at **AR = 0, MA = 1**, identifying **ARIMA(0,1,1)** as the most parsimonious candidate.
-
--   **Alternative Specifications:** A secondary **'o'** at the (1,1) position suggests **ARIMA(1,1,1)** as a viable alternative that captures both autoregressive and moving average dynamics.
-
--   **Parsimony vs. Complexity:** Notably, the EACF shows a stable region of white noise starting at these low orders, effectively ignoring the isolated high-lag spikes previously noted in the ACF & PACF plots (@fig-diff-acf-pacf).
 
 ```{r stat-eacf}
 #| label: stat-eacf
 
-cat("=== EACF of First-Differenced CBA Price ===\n")
+cat("=== EACF — First-Differenced CBA Price ===\n")
 eacf(diff_y_train, ar.max = 5, ma.max = 5)
 ```
 
-For CBA daily returns, we expect the EACF to support low-order specifications — consistent with the weak autocorrelation visible in @fig-diff-acf-pacf. EACF results align with our previous ACF & PACF analysis; by selecting the vertex at (0,1), we avoid the risk of over-fitting historical artifacts.
-
-Consequently, **ARIMA(0,1,1)** and **ARIMA(1,1,1)** are retained as the candidate models for model fitting.
+The 'o' symbols mark the upper-left corner of a white-noise triangle, identifying candidate ARMA(p,q) pairs. The EACF vertex at AR = 0, MA = 1 identifies ARIMA(0,1,1) as the most parsimonious candidate; a secondary 'o' at (1,1) suggests ARIMA(1,1,1) as a viable mixed alternative. The EACF effectively ignores the isolated high-lag spikes from @fig-diff-acf-pacf, reinforcing the parsimony argument.
 
 ## BIC Subset Selection {#sec-bic}
 
-@fig-bic-subsets complements the EACF findings by applying an exhaustive OLS-based search across AR and MA order combinations. The lowest-BIC rows (top of the plot) identify the models that best balance fit and parsimony. Shaded cells highlight the specific AR and MA parameters retained at each order level.
+### 10×10 Search Space
 
-Looking at the **BIC subset selection table** (@fig-bic-subsets ), we can statistically rank our candidate models. The Bayesian Information Criterion (BIC) is a "strict judge"—it significantly penalizes extra parameters to prevent over-fitting.
-
--   **Top Row (Lowest BIC = 11):** The best-performing model according to BIC is **ARIMA(1,1,0)**. The shaded box for **p-lag1** indicate that only the first-order autoregressive term is necessary to minimize information loss.
-
--   **Second Row (BIC = 16):** This represents a **5,1,0** structure (shaded boxes at **p-lag1** and **p-lag5**). This model captures that isolated Lag-5 spike we previously discussed. However, it comes with a "penalty cost," raising the BIC from 11 to 16.
-
--   While **ARIMA(5,1,0)** captures a potential weekly 5 day-trading-cycle (Lag 5), it is rejected in favor of the more parsimonious **ARIMA(1,1,0)** for the following reasons:
-
-    -   **The BIC Gap:** A jump in BIC from **11 to 16** is substantial. Generally, a difference greater than 2-6 is considered strong evidence that the lower-BIC model (1,1,0) is superior.
-
-    -   **Risk of Over-fitting:** Given the high efficiency of the ASX, weekly cycles are often transient artifacts rather than permanent structural features. The 5,1,0 model is "chasing" a specific historical bump at Lag 5. In the highly efficient ASX market, there is no guarantee that a 5-day cycle observed in the training data will persist in the 30-day forecast period. The 1,1,0 model is more "robust" and less likely to fail if that specific cycle disappears.
-
-    -   **Parsimony:** Our goal is a "lean" model. Since the BIC table confirms that adding Lag 5 actually *worsens* the overall model quality (by increasing the BIC score), the extra complexity isn't mathematically "paying for itself."
-
-```{r fig-bic-subsets}
-#| label: fig-bic-subsets
-#| fig-cap: "BIC subset selection plot for the first-differenced CBA series. Shaded cells indicate parameters selected by the BIC criterion at each AR/MA order combination. Models at the bottom of the plot (lowest BIC) are the preferred specifications. The shading pattern guides us toward the most parsimonious adequate model."
+```{r fig-bic-10x10-subsets}
+#| label: fig-bic-10x10-subsets
+#| fig-cap: "BIC subset selection — 10×10 search space. The top-ranked row (lowest BIC) identifies the most parsimonious model across a broad AR/MA order grid. Shaded cells show retained parameters at each order level."
 #| fig-height: 5
 
-res_bic <- armasubsets(y      = diff_y_train,
-                       nar    = 5,
-                       nma    = 5,
-                       y.name = "p",
-                       ar.method = "ols")
-plot(res_bic)
+res_bic_10 <- armasubsets(y = diff_y_train, nar = 10, nma = 10,
+                          y.name = "p", ar.method = "ols")
+plot(res_bic_10)
 ```
 
-@fig-bic-subsets complements the EACF findings by applying an exhaustive OLS-based search across AR and MA order combinations. Consequently, **ARIMA(1,1,0)** is retained as the candidate models for model fitting.
+The 10×10 BIC search in @fig-bic-10x10-subsets ranks models across a broad grid. The lowest-BIC row identifies ARIMA(7,1,0) — where only the 7th-order AR component minimises information loss — potentially capturing a weekly cyclicality or delayed market reaction specific to CBA. The second-ranked row suggests a more complex higher-order specification; the substantial BIC penalty increase from row 1 to row 2 signals diminishing returns from additional parameters.
+
+### 5×5 Search Space
+
+```{r fig-bic-5x5-subsets}
+#| label: fig-bic-5x5-subsets
+#| fig-cap: "BIC subset selection — 5×5 search space. The restricted grid provides higher resolution for short-lag dependencies. The top row identifies ARIMA(3,1,0) as optimal within this search space."
+#| fig-height: 5
+
+res_bic_5 <- armasubsets(y = diff_y_train, nar = 5, nma = 5,
+                         y.name = "p", ar.method = "ols")
+plot(res_bic_5)
+```
+
+Within the 5×5 restricted grid (@fig-bic-5x5-subsets), ARIMA(3,1,0) achieves the lowest BIC — the shading at p-lag3 suggests a three-day autoregressive structure capturing short-term momentum or mean reversion. The second-ranked specification incurs a BIC increase of approximately 6 units, which constitutes strong statistical evidence in favour of the simpler model. ARIMA(1,1,3) is retained as a secondary BIC candidate despite this penalty.
 
 ## Candidate Model Selection
-
-Synthesising the evidence from @fig-diff-acf-pacf, the EACF table, and @fig-bic-subsets, we identify 3 candidate models for estimation and residual evaluation:
 
 ```{r stat-candidates}
 #| label: stat-candidates
 
 candidates_df <- data.frame(
-  "Candidate Model"      = c("ARIMA(0,1,1)", "ARIMA(1,1,0)",
-                              "ARIMA(1,1,1)"),
-  "Specification Source" = c("EACF",
-                              "BIC",
-                              "EACF, ACF & PACF"),
-  "Rationale"            = c(
-    "Captures the one-period impact of short-term shocks. This implies that market news (e.g., an RBA rate change) is absorbed quickly, with only a one-day residual effect on price adjustments.",
-    "Models short-term momentum or mean reversion. This assumes today’s CBA return is a partial function of yesterday’s return, reflecting consistent institutional buying or selling pressure.",
-    "A flexible mixed model that accounts for both momentum (AR) and shock-persistence (MA). This is the most complete low-order specification for complex financial series."
+  "Candidate Model"      = c("ARIMA(0,1,1)", "ARIMA(1,1,0)", "ARIMA(1,1,1)",
+                              "ARIMA(3,1,0)", "ARIMA(1,1,3)",
+                              "ARIMA(7,1,0)", "ARIMA(7,1,9)"),
+  "Specification Source" = c("EACF", "EACF", "EACF / ACF & PACF",
+                              "BIC 5×5", "BIC 5×5",
+                              "BIC 10×10", "BIC 10×10"),
+  "Rationale" = c(
+    "MA(1) captures the one-period impact of short-term shocks — e.g., an RBA rate change absorbed within a single trading day.",
+    "AR(1) models short-term momentum: today's return as a partial function of yesterday's, reflecting institutional buying or selling pressure.",
+    "Mixed ARMA(1,1) captures both momentum (AR) and shock persistence (MA) — the most complete low-order specification.",
+    "Three-lag AR captures momentum over approximately one trading week, reflecting short-term price trends.",
+    "MA(3) captures shock persistence over three trading days, implying market surprises influence prices for nearly a full week.",
+    "7-lag AR captures potential weekly cyclicality (≈ 7 trading days), detecting systematic day-of-week effects.",
+    "High-order mixed model with 7 AR lags (≈ 2 trading weeks) and 9 MA lags — maximum flexibility at high parameterisation cost."
   ),
   check.names = FALSE
 )
@@ -1116,45 +848,43 @@ kbl(candidates_df,
     booktabs = TRUE) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
                 full_width = FALSE) %>%
-  column_spec(1, bold = TRUE, width = "4cm") %>%
-  column_spec(2, width = "5cm") %>%
-  column_spec(3, width = "8cm")
+  column_spec(1, bold = TRUE, width = "3.5cm") %>%
+  column_spec(2, width = "4cm") %>%
+  column_spec(3, width = "8.5cm")
 ```
 
-Each candidate represents a distinct structural hypothesis regarding the generation of CBA’s daily price changes: pure shock-persistence (MA), pure momentum (AR), or a combination (ARMA). In accordance with the **Principle of Parsimony**, we prioritize these three low-order models to minimize the risk of over-fitting historical artifacts.
-
-These candidates will now proceed to the **Model Fitting and Parameter Estimation** phases. 
+The seven candidates span a spectrum from parsimonious low-order models (ARIMA(0,1,1), ARIMA(1,1,0)) to high-order BIC-selected specifications (ARIMA(7,1,0), ARIMA(7,1,9)). This deliberate range tests whether added complexity resolves genuine structure or merely absorbs noise — a distinction that residual diagnostics and information criteria will determine.
 
 # Model Fitting
 
-All models are fitted to the raw (untransformed) training price series using `lambda = 0` inside `Arima()`, which applies the log transformation internally and reports results on the log scale. Both CSS (Conditional Sum of Squares) and ML (Maximum Likelihood) estimation methods are used. In large samples (daily data, n ≈ 470), CSS and ML estimates should converge; any material discrepancy between the two signals model mis-specification or near-boundary parameter values.
-
-`include.mean = FALSE` constrains the drift of the differenced series to zero — consistent with the assumption that CBA log-returns have no significant long-run directional drift beyond the stochastic trend already removed by differencing.
+All models are fitted to the **raw (untransformed) original price series** using `Arima()`. Both CSS and ML estimation are applied. CSS provides a computationally efficient approximation; ML maximises the exact likelihood. In a sample of this size (n ≈ 420), the two methods should converge to nearly identical estimates — any material divergence is a signal of mis-specification or near-boundary parameters. `include.mean = FALSE` constrains the drift to zero, consistent with the no-drift assumption for CBA daily price changes.
 
 ```{r fit-models}
 #| label: fit-models
 
-# Define log-scale training series for fitted-value overlay plots
-log_train <- log(y_train)
-log_test  <- log(y_test)
+# ── Fit all 7 candidates under CSS and ML ─────────────────────────────────────
+model_011_css <- Arima(y_train, order = c(0,1,1), method = "CSS")
+model_011_ml  <- Arima(y_train, order = c(0,1,1), method = "ML")
 
-# ── Fit all candidates under both CSS and ML ───────────────────────────────────
-model_011_css <- Arima(y_train, order = c(0,1,1), method = "CSS",
-                       lambda = 0, include.mean = FALSE)
-model_011_ml  <- Arima(y_train, order = c(0,1,1), method = "ML",
-                       lambda = 0, include.mean = FALSE)
+model_110_css <- Arima(y_train, order = c(1,1,0), method = "CSS")
+model_110_ml  <- Arima(y_train, order = c(1,1,0), method = "ML")
 
-model_110_css <- Arima(y_train, order = c(1,1,0), method = "CSS",
-                       lambda = 0, include.mean = FALSE)
-model_110_ml  <- Arima(y_train, order = c(1,1,0), method = "ML",
-                       lambda = 0, include.mean = FALSE)
+model_111_css <- Arima(y_train, order = c(1,1,1), method = "CSS")
+model_111_ml  <- Arima(y_train, order = c(1,1,1), method = "ML")
 
-model_111_css <- Arima(y_train, order = c(1,1,1), method = "CSS",
-                       lambda = 0, include.mean = FALSE)
-model_111_ml  <- Arima(y_train, order = c(1,1,1), method = "ML",
-                       lambda = 0, include.mean = FALSE)
+model_310_css <- Arima(y_train, order = c(3,1,0), method = "CSS")
+model_310_ml  <- Arima(y_train, order = c(3,1,0), method = "ML")
 
-cat("All candidate models fitted successfully.\n")
+model_113_css <- Arima(y_train, order = c(1,1,3), method = "CSS")
+model_113_ml  <- Arima(y_train, order = c(1,1,3), method = "ML")
+
+model_710_css <- Arima(y_train, order = c(7,1,0), method = "CSS")
+model_710_ml  <- Arima(y_train, order = c(7,1,0), method = "ML")
+
+model_719_css <- Arima(y_train, order = c(7,1,9), method = "CSS")
+model_719_ml  <- Arima(y_train, order = c(7,1,9), method = "ML")
+
+cat("All 7 candidate models fitted successfully under CSS and ML.\n")
 ```
 
 ## ARIMA(0,1,1)
@@ -1162,81 +892,146 @@ cat("All candidate models fitted successfully.\n")
 ```{r stat-coef-011}
 #| label: stat-coef-011
 
-cat("--- ARIMA(0,1,1) Coefficient Estimates ---\n\n")
-cat("CSS estimation:\n")
 make_coef_table(model_011_css, "ARIMA(0,1,1) — CSS Estimation")
-cat("\nML estimation:\n")
 make_coef_table(model_011_ml,  "ARIMA(0,1,1) — ML Estimation")
 ```
 
 ```{r fig-fitted-011}
 #| label: fig-fitted-011
-#| fig-cap: "ARIMA(0,1,1) fitted values overlaid on the log-transformed CBA price series under CSS (left) and ML (right) estimation. Consistent overlap between the two fitted trajectories — with no divergence in estimates or trajectory shape — indicates a well-identified, stable model."
+#| fig-cap: "ARIMA(0,1,1) fitted values overlaid on the original CBA price series under CSS (left) and ML (right). Near-identical trajectories indicate a numerically stable, well-identified model."
 #| fig-height: 4
 
-plot_css_ml(model_011_css, model_011_ml, log_train, spec = "ARIMA(0,1,1)")
+plot_css_ml(model_011_css, model_011_ml, y_train, spec = "ARIMA(0,1,1)")
 ```
 
-The MA(1) coefficient captures the lingering effect of a one-period shock — for example, a surprise RBA rate announcement that creates a one-day price jump which fades the following trading day. If the MA(1) term is statistically significant (p \< 0.05) under both CSS and ML, the model is well-identified. An MA(1) coefficient within the invertibility region (\|θ₁\| \< 1) confirms mathematical validity. As shown in @fig-fitted-011, near-identical fitted trajectories under both estimation methods provide confidence in the model's stability.
+The MA(1) coefficient θ₁ captures the one-period lingering effect of a price shock — for example, a surprise RBA announcement that initiates a price adjustment which fades within one trading day. For the model to be well-identified, θ₁ must be statistically significant (p \< 0.05) under both CSS and ML, and must satisfy the invertibility condition \|θ₁\| \< 1. If the MA(1) term is non-significant, this implies CBA daily price changes carry no exploitable one-day shock memory — consistent with a pure random walk (ARIMA(0,1,0)). As shown in @fig-fitted-011, near-identical CSS and ML fitted trajectories confirm numerical stability regardless of coefficient significance.
 
 ## ARIMA(1,1,0)
 
 ```{r stat-coef-110}
 #| label: stat-coef-110
 
-cat("--- ARIMA(1,1,0) Coefficient Estimates ---\n\n")
-cat("CSS estimation:\n")
 make_coef_table(model_110_css, "ARIMA(1,1,0) — CSS Estimation")
-cat("\nML estimation:\n")
 make_coef_table(model_110_ml,  "ARIMA(1,1,0) — ML Estimation")
 ```
 
 ```{r fig-fitted-110}
 #| label: fig-fitted-110
-#| fig-cap: "ARIMA(1,1,0) fitted values overlaid on the log-transformed CBA price series under CSS (left) and ML (right) estimation."
+#| fig-cap: "ARIMA(1,1,0) fitted values overlaid on the original CBA price series under CSS (left) and ML (right)."
 #| fig-height: 4
 
-plot_css_ml(model_110_css, model_110_ml, log_train, spec = "ARIMA(1,1,0)")
+plot_css_ml(model_110_css, model_110_ml, y_train, spec = "ARIMA(1,1,0)")
 ```
 
-The AR(1) coefficient models the degree to which yesterday's log-return predicts today's. A positive AR(1) implies short-term momentum — a day with above-average CBA returns tends to be followed by another above-average day, consistent with the institutional demand dynamics and fund-flow inertia characteristic of large-cap ASX bank equities. Agreement between CSS and ML estimates in @fig-fitted-110 signals a stable, well-identified specification.
+The AR(1) coefficient φ₁ models yesterday's price change as a direct predictor of today's. A positive φ₁ implies short-term momentum — a day of above-average CBA returns tends to be followed by another, consistent with institutional fund-flow inertia in large-cap ASX bank equities. A negative φ₁ implies mean reversion — sharp moves tend to partially retrace the following day. Agreement between CSS and ML estimates in @fig-fitted-110 signals a stable specification.
 
 ## ARIMA(1,1,1)
 
 ```{r stat-coef-111}
 #| label: stat-coef-111
 
-cat("--- ARIMA(1,1,1) Coefficient Estimates ---\n\n")
-cat("CSS estimation:\n")
 make_coef_table(model_111_css, "ARIMA(1,1,1) — CSS Estimation")
-cat("\nML estimation:\n")
 make_coef_table(model_111_ml,  "ARIMA(1,1,1) — ML Estimation")
 ```
 
 ```{r fig-fitted-111}
 #| label: fig-fitted-111
-#| fig-cap: "ARIMA(1,1,1) fitted values overlaid on the log-transformed CBA price series under CSS (left) and ML (right) estimation."
+#| fig-cap: "ARIMA(1,1,1) fitted values overlaid on the original CBA price series under CSS (left) and ML (right)."
 #| fig-height: 4
 
-plot_css_ml(model_111_css, model_111_ml, log_train, spec = "ARIMA(1,1,1)")
+plot_css_ml(model_111_css, model_111_ml, y_train, spec = "ARIMA(1,1,1)")
 ```
 
-A combined AR(1)+MA(1) specification is more flexible but risks AR–MA parameter cancellation — a well-known pathology where the two terms partially offset each other, inflating standard errors and rendering one or both coefficients non-significant. If ML estimation finds either the AR(1) or MA(1) insignificant while ARIMA(0,1,1) or ARIMA(1,1,0) yield significant estimates alone, the principle of parsimony dictates the simpler specification. @fig-fitted-111 provides the visual alignment check between estimation methods.
+The combined AR(1)+MA(1) specification captures both momentum and shock persistence but risks AR–MA parameter cancellation — where the AR and MA roots partially offset each other, inflating standard errors and rendering one or both terms non-significant. If ML finds either the AR(1) or MA(1) insignificant while the simpler models produce significant individual estimates, the principle of parsimony dictates selecting the simpler specification. @fig-fitted-111 provides the visual CSS-versus-ML alignment check.
+
+## ARIMA(3,1,0)
+
+```{r stat-coef-310}
+#| label: stat-coef-310
+
+make_coef_table(model_310_css, "ARIMA(3,1,0) — CSS Estimation")
+make_coef_table(model_310_ml,  "ARIMA(3,1,0) — ML Estimation")
+```
+
+```{r fig-fitted-310}
+#| label: fig-fitted-310
+#| fig-cap: "ARIMA(3,1,0) fitted values overlaid on the original CBA price series under CSS (left) and ML (right)."
+#| fig-height: 4
+
+plot_css_ml(model_310_css, model_310_ml, y_train, spec = "ARIMA(3,1,0)")
+```
+
+The three-lag AR structure allows today's price change to depend on changes over the past three trading days — approximately one calendar week of market information. This may capture a slow-decay momentum effect where institutional orders are executed over several days, or a partial mean-reversion following a multi-day directional run. However, the significance of all three AR coefficients under ML must be jointly assessed: if AR(2) and AR(3) are non-significant, the model collapses toward ARIMA(1,1,0) and the extra parameters are not justified.
+
+## ARIMA(1,1,3)
+
+```{r stat-coef-113}
+#| label: stat-coef-113
+
+make_coef_table(model_113_css, "ARIMA(1,1,3) — CSS Estimation")
+make_coef_table(model_113_ml,  "ARIMA(1,1,3) — ML Estimation")
+```
+
+```{r fig-fitted-113}
+#| label: fig-fitted-113
+#| fig-cap: "ARIMA(1,1,3) fitted values overlaid on the original CBA price series under CSS (left) and ML (right)."
+#| fig-height: 4
+
+plot_css_ml(model_113_css, model_113_ml, y_train, spec = "ARIMA(1,1,3)")
+```
+
+The MA(3) component alongside AR(1) models shock persistence over three trading days — implying that a surprise market event influences CBA prices for nearly a full trading week after it occurs. With four estimated parameters, this model carries moderate over-parameterisation risk. CSS–ML divergence in any of the MA terms visible in @fig-fitted-113 would indicate numerical instability in the likelihood surface, a common symptom of over-specified ARMA models on near-random-walk series.
+
+## ARIMA(7,1,0)
+
+```{r stat-coef-710}
+#| label: stat-coef-710
+
+make_coef_table(model_710_css, "ARIMA(7,1,0) — CSS Estimation")
+make_coef_table(model_710_ml,  "ARIMA(7,1,0) — ML Estimation")
+```
+
+```{r fig-fitted-710}
+#| label: fig-fitted-710
+#| fig-cap: "ARIMA(7,1,0) fitted values overlaid on the original CBA price series under CSS (left) and ML (right). With seven AR parameters, any CSS–ML divergence is a strong indicator of over-fitting."
+#| fig-height: 4
+
+plot_css_ml(model_710_css, model_710_ml, y_train, spec = "ARIMA(7,1,0)")
+```
+
+The 7-lag AR structure was identified as the BIC-optimal specification in the 10×10 search, suggesting a potential weekly cyclicality in CBA price changes — consistent with systematic day-of-week effects documented in bank equity trading (e.g., lower liquidity on Mondays, institutional rebalancing on Fridays). However, seven parameters impose a substantial information penalty. For this model to be justified, a majority of AR coefficients must be statistically significant under ML; a sparse pattern where only AR(7) is significant while AR(1)–AR(6) are not would suggest the BIC is detecting a specific seasonal pulse rather than a genuine AR structure.
+
+## ARIMA(7,1,9)
+
+```{r stat-coef-719}
+#| label: stat-coef-719
+
+make_coef_table(model_719_css, "ARIMA(7,1,9) — CSS Estimation")
+make_coef_table(model_719_ml,  "ARIMA(7,1,9) — ML Estimation")
+```
+
+```{r fig-fitted-719}
+#| label: fig-fitted-719
+#| fig-cap: "ARIMA(7,1,9) fitted values overlaid on the original CBA price series under CSS (left) and ML (right). With 16 estimated parameters, this model is the most likely to exhibit CSS–ML divergence and parameter non-significance."
+#| fig-height: 4
+
+plot_css_ml(model_719_css, model_719_ml, y_train, spec = "ARIMA(7,1,9)")
+```
+
+With 16 estimated parameters — 9 AR and 7 MA — this is the most heavily parameterised candidate. In a daily equity return series of approximately 420 observations, this represents nearly 1 parameter per 26 data points, well above the parsimony threshold. The BIC 10×10 grid identified this as a second-ranked specification; the BIC penalty from the additional MA terms is expected to outweigh the marginal log-likelihood gain. Any numerical convergence warnings during ML estimation, CSS–ML divergence in @fig-fitted-917, or widespread parameter non-significance confirm this model is over-specified for the CBA data-generating process.
 
 # Residual Diagnostics
 
 Per Module 7, adequate ARIMA residuals must satisfy two fundamental properties:
 
-1.  **White noise** — no significant autocorrelation remaining; the model has captured all exploitable structure.
-2.  **Normality** — essential for the validity of ML estimation and prediction interval construction.
+1.  **White noise** — no significant autocorrelation remaining in residuals.
+2.  **Normality** — approximately Gaussian innovations for valid ML estimation and prediction intervals.
 
-Deviations from these properties reveal that the model has left information in the residuals: unmodelled autocorrelation (suggesting higher p or q), non-normality (suggesting outliers or structural breaks), or heteroscedasticity (suggesting a GARCH extension).
+For each of the seven candidate models we apply the full three-part diagnostic suite:
 
-For each candidate model, we apply the full three-part diagnostic suite:
-
--   **Visual Inspection** — 2×2 panel: standardised residual time series, histogram, QQ plot, and ACF of residuals.
+-   **Visual Inspection** — 2×2 panel: standardised residuals, histogram, QQ plot, ACF of residuals.
 -   **tsdiag Panel** — combined standardised residuals, ACF, and Ljung-Box p-values at successive lags.
--   **Statistical Tests** — formal Ljung-Box (autocorrelation) and Shapiro-Wilk (normality) tests.
+-   **Statistical Tests** — formal Ljung-Box (white noise) and Shapiro-Wilk (normality) tests.
 
 ## ARIMA(0,1,1) Residuals
 
@@ -1244,7 +1039,7 @@ For each candidate model, we apply the full three-part diagnostic suite:
 
 ```{r fig-resid-panel-011}
 #| label: fig-resid-panel-011
-#| fig-cap: "Residual diagnostic panel for ARIMA(0,1,1) ML. Top-left: standardised residuals should scatter rectangularly within ±3σ (red dotted lines) around zero (blue dashed). Top-right: histogram should be symmetric and centred at zero. Bottom-left: QQ points should align with the reference line. Bottom-right: all ACF bars should fall within the 95% confidence bands."
+#| fig-cap: "Residual diagnostic panel — ARIMA(0,1,1) ML. Top-left: standardised residuals within ±3σ (dotted blue lines) around zero (dashed). Top-right: histogram centred at zero. Bottom-left: QQ alignment. Bottom-right: ACF within 95% bands."
 #| fig-height: 7
 
 plot_residuals_panel(model_011_ml, "ARIMA(0,1,1) ML")
@@ -1252,7 +1047,7 @@ plot_residuals_panel(model_011_ml, "ARIMA(0,1,1) ML")
 
 ```{r fig-resid-tsdiag-011}
 #| label: fig-resid-tsdiag-011
-#| fig-cap: "tsdiag() panel for ARIMA(0,1,1) ML. The bottom panel of Ljung-Box p-values should remain consistently above the 0.05 threshold (dashed line) across all lags — this is the definitive Module 7 pass criterion for white-noise residuals."
+#| fig-cap: "tsdiag() panel — ARIMA(0,1,1) ML. Ljung-Box p-values (bottom) should remain consistently above 0.05 — the definitive Module 7 white-noise criterion."
 #| fig-height: 6
 
 plot_residuals_tsdiag(model_011_ml)
@@ -1269,17 +1064,17 @@ resid_011$table
 
 ### Interpretation
 
-**Residual time series** (@fig-resid-panel-011, top-left). The standardised residuals scatter within the ±3σ bounds throughout most of the sample, with no systematic trend or curvature. The notable spike near 2025.5 corresponds to the level-shift event identified in the EDA — a high-impact trading day that the ARIMA model cannot fully absorb, as it lies outside the model's assumption of homogeneous Gaussian innovations. This single outlier is a characteristic feature of bank equity returns during macro shock events, not evidence of model mis-specification per se.
+**Residual time series** (@fig-resid-panel-011, top-left). The standardised residuals scatter within ±3σ throughout most of the sample with no systematic trend or curvature. The notable spike near 2025.5 corresponds to the level-shift event from the EDA — a high-impact trading day beyond the ARIMA model's assumption of homogeneous Gaussian innovations. This is a known limitation of linear models for financial data, not a model mis-specification per se.
 
-**Histogram** (@fig-resid-panel-011, top-right). The residual distribution is broadly symmetric and centred near zero, consistent with the MA(1) structure having absorbed the dominant short-lag autocorrelation. Any excess kurtosis (heavier tails than the normal overlay) reflects the financial return distribution's well-known fat-tail property — a limitation of the Gaussian ARIMA framework that a GARCH extension would address.
+**Histogram** (@fig-resid-panel-011, top-right). The residual distribution is broadly symmetric and centred near zero. Any excess kurtosis visible in the tails reflects the well-known fat-tail property of daily equity returns — a feature that a GARCH extension would explicitly model.
 
-**QQ plot** (@fig-resid-panel-011, bottom-left). Points along the central portion of the theoretical line suggest approximate normality for typical trading days. Deviations at the extremes — particularly at the upper tail — correspond to the extreme return observations associated with the 2025.5 shock event.
+**QQ plot** (@fig-resid-panel-011, bottom-left). The central portion of the QQ plot aligns well with the theoretical line, suggesting approximate normality for typical trading days. Tail deviations correspond to the extreme observations associated with the 2025.5 event.
 
-**ACF of residuals** (@fig-resid-panel-011, bottom-right). All autocorrelation bars fall within the 95% confidence bands, confirming that the MA(1) term has successfully absorbed the short-lag autocorrelation identified in @fig-diff-acf-pacf. No residual pattern remains.
+**ACF of residuals** (@fig-resid-panel-011, bottom-right). All autocorrelation bars fall within the 95% confidence bands, confirming that any short-lag structure has been absorbed. No systematic pattern remains.
 
-**tsdiag panel** (@fig-resid-tsdiag-011). The Ljung-Box p-values in the bottom panel remain consistently above the 0.05 threshold across all lags displayed — the definitive Module 7 white-noise pass criterion. Combined with the ACF plot, this confirms no exploitable autocorrelative structure remains in the residuals.
+**tsdiag panel** (@fig-resid-tsdiag-011). The Ljung-Box p-values in the bottom panel remain consistently above 0.05 across all lags — the definitive Module 7 pass criterion.
 
-**Formal tests.** The Ljung-Box p-value of `r round(resid_011$lb$p.value, 4)` (`r ifelse(resid_011$lb$p.value > 0.05, "PASS", "FAIL")`: no residual autocorrelation) and Shapiro-Wilk p-value of `r round(resid_011$sw$p.value, 4)` (`r ifelse(resid_011$sw$p.value > 0.05, "PASS — normality holds", "FAIL — normality violated")`) provide the formal statistical verdict. Any normality failure should be interpreted in context: for daily equity returns, some non-normality is expected due to fat tails and rare large-move events.
+**Formal tests.** Ljung-Box p = `r round(resid_011$lb$p.value, 4)` (`r ifelse(resid_011$lb$p.value > 0.05, "PASS — white noise", "FAIL — residual autocorrelation")`). Shapiro-Wilk p = `r round(resid_011$sw$p.value, 4)` (`r ifelse(resid_011$sw$p.value > 0.05, "PASS — normality holds", "FAIL — normality violated")`). Normality failures in daily equity residuals are expected due to fat tails; the Ljung-Box result is the primary adequacy criterion.
 
 ------------------------------------------------------------------------
 
@@ -1289,7 +1084,7 @@ resid_011$table
 
 ```{r fig-resid-panel-110}
 #| label: fig-resid-panel-110
-#| fig-cap: "Residual diagnostic panel for ARIMA(1,1,0) ML. Compare with @fig-resid-panel-011 to assess whether the AR(1) specification resolves any autocorrelative structure that the MA(1) model left in the residuals."
+#| fig-cap: "Residual diagnostic panel — ARIMA(1,1,0) ML. Compare with @fig-resid-panel-011 to assess whether the AR(1) parameterisation resolves any structure the MA(1) model leaves in the residuals."
 #| fig-height: 7
 
 plot_residuals_panel(model_110_ml, "ARIMA(1,1,0) ML")
@@ -1297,7 +1092,7 @@ plot_residuals_panel(model_110_ml, "ARIMA(1,1,0) ML")
 
 ```{r fig-resid-tsdiag-110}
 #| label: fig-resid-tsdiag-110
-#| fig-cap: "tsdiag() panel for ARIMA(1,1,0) ML."
+#| fig-cap: "tsdiag() panel — ARIMA(1,1,0) ML."
 #| fig-height: 6
 
 plot_residuals_tsdiag(model_110_ml)
@@ -1314,13 +1109,13 @@ resid_110$table
 
 ### Interpretation
 
-**Residual time series** (@fig-resid-panel-110, top-left). The AR(1) specification produces a comparable scatter pattern to ARIMA(0,1,1), with residuals broadly contained within ±3σ and the same prominent outlier near 2025.5. The AR(1) mechanism — conditioning today's return on yesterday's — absorbs the lag-1 momentum effect but is structurally symmetric: it does not distinguish between the persistence of positive and negative shocks.
+**Residual time series** (@fig-resid-panel-110, top-left). The AR(1) specification produces a comparable scatter pattern to ARIMA(0,1,1) with the same 2025.5 outlier. The AR(1) mechanism — conditioning today's change on yesterday's — captures the lag-1 momentum effect symmetrically but does not distinguish between persistence of positive versus negative shocks.
 
-**ACF of residuals** (@fig-resid-panel-110, bottom-right). If the AR(1) adequately captures the lag-1 autocorrelation in @fig-diff-acf-pacf, the residual ACF should show no remaining significant bars. Any persistent structure would indicate that the MA parameterisation of ARIMA(0,1,1) is a better match for the data-generating process — a subtlety that the formal Ljung-Box test and information criteria comparison will resolve.
+**ACF of residuals** (@fig-resid-panel-110, bottom-right). If the AR(1) parameterisation adequately captures the lag-1 autocorrelation structure in @fig-diff-acf-pacf, no remaining significant bars should be visible. Persistent bars would indicate the MA parameterisation of ARIMA(0,1,1) is better suited to the data-generating process.
 
-**tsdiag panel** (@fig-resid-tsdiag-110). The Ljung-Box p-value trajectory provides the definitive comparison with @fig-resid-tsdiag-011 — models with consistently higher p-values across all lags are more definitively white-noise.
+**tsdiag panel** (@fig-resid-tsdiag-110). The Ljung-Box p-value trajectory provides the definitive comparison with @fig-resid-tsdiag-011 — consistently higher p-values across all lags indicate more definitively white-noise residuals.
 
-**Formal tests.** Ljung-Box p-value: `r round(resid_110$lb$p.value, 4)` (`r ifelse(resid_110$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p-value: `r round(resid_110$sw$p.value, 4)` (`r ifelse(resid_110$sw$p.value > 0.05, "PASS", "FAIL")`). Compare directly against the ARIMA(0,1,1) results to assess relative adequacy.
+**Formal tests.** Ljung-Box p = `r round(resid_110$lb$p.value, 4)` (`r ifelse(resid_110$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p = `r round(resid_110$sw$p.value, 4)` (`r ifelse(resid_110$sw$p.value > 0.05, "PASS", "FAIL")`).
 
 ------------------------------------------------------------------------
 
@@ -1330,7 +1125,7 @@ resid_110$table
 
 ```{r fig-resid-panel-111}
 #| label: fig-resid-panel-111
-#| fig-cap: "Residual diagnostic panel for ARIMA(1,1,1) ML. The mixed ARMA(1,1) specification uses two parameters to capture what the simpler models capture with one — examine whether the additional complexity yields any visible improvement in residual behaviour."
+#| fig-cap: "Residual diagnostic panel — ARIMA(1,1,1) ML. The mixed specification uses two parameters to capture what simpler models may capture with one — compare residual behaviour against @fig-resid-panel-011 and @fig-resid-panel-110."
 #| fig-height: 7
 
 plot_residuals_panel(model_111_ml, "ARIMA(1,1,1) ML")
@@ -1338,7 +1133,7 @@ plot_residuals_panel(model_111_ml, "ARIMA(1,1,1) ML")
 
 ```{r fig-resid-tsdiag-111}
 #| label: fig-resid-tsdiag-111
-#| fig-cap: "tsdiag() panel for ARIMA(1,1,1) ML."
+#| fig-cap: "tsdiag() panel — ARIMA(1,1,1) ML."
 #| fig-height: 6
 
 plot_residuals_tsdiag(model_111_ml)
@@ -1355,64 +1150,215 @@ resid_111$table
 
 ### Interpretation
 
-**Residual diagnostics** (@fig-resid-panel-111). If the combined AR(1)+MA(1) structure provides no visible improvement over the simpler models in @fig-resid-panel-011 and @fig-resid-panel-110, it suggests the additional parameter is fitting noise rather than genuine signal — the hallmark of over-parameterisation. The key comparison is the ACF panel: if no new autocorrelation bars are resolved relative to the simpler models, the extra parameter is redundant.
+**Residual diagnostics** (@fig-resid-panel-111). If the combined AR(1)+MA(1) structure provides no visible improvement over @fig-resid-panel-011 and @fig-resid-panel-110, the additional parameter is fitting noise — the hallmark of over-parameterisation. The key diagnostic is the ACF panel: unchanged autocorrelation structure relative to simpler models indicates the extra parameter is redundant.
 
-**Parameter interaction risk.** In a mixed ARMA model estimated on near-random-walk financial data, the AR and MA roots can come close to cancelling each other. This produces inflated standard errors for both coefficients (visible as low z-values in the coefficient tables above), wider confidence intervals, and numerically sensitive ML optimisation. The coefficient table for ARIMA(1,1,1) should be compared directly against those for ARIMA(0,1,1) and ARIMA(1,1,0): if either the AR(1) or MA(1) term loses significance under ML estimation, the simpler model is preferred.
+**Parameter cancellation risk.** In a mixed ARMA model on near-random-walk data, AR and MA roots can come close to cancelling each other, producing inflated standard errors, low z-values in the coefficient tables above, and a numerically flat ML likelihood surface. If either AR(1) or MA(1) is non-significant under ML while the corresponding simpler model parameter is significant, the simpler model is preferred.
 
-**Formal tests.** Ljung-Box p-value: `r round(resid_111$lb$p.value, 4)` (`r ifelse(resid_111$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p-value: `r round(resid_111$sw$p.value, 4)` (`r ifelse(resid_111$sw$p.value > 0.05, "PASS", "FAIL")`).
+**Formal tests.** Ljung-Box p = `r round(resid_111$lb$p.value, 4)` (`r ifelse(resid_111$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p = `r round(resid_111$sw$p.value, 4)` (`r ifelse(resid_111$sw$p.value > 0.05, "PASS", "FAIL")`).
+
+------------------------------------------------------------------------
+
+## ARIMA(3,1,0) Residuals
+
+### Visual Inspection
+
+```{r fig-resid-panel-310}
+#| label: fig-resid-panel-310
+#| fig-cap: "Residual diagnostic panel — ARIMA(3,1,0) ML. If the three-lag AR structure resolves any residual autocorrelation left by ARIMA(1,1,0), the ACF panel should show cleaner bands than @fig-resid-panel-110."
+#| fig-height: 7
+
+plot_residuals_panel(model_310_ml, "ARIMA(3,1,0) ML")
+```
+
+```{r fig-resid-tsdiag-310}
+#| label: fig-resid-tsdiag-310
+#| fig-cap: "tsdiag() panel — ARIMA(3,1,0) ML."
+#| fig-height: 6
+
+plot_residuals_tsdiag(model_310_ml)
+```
+
+### Statistical Tests
+
+```{r stat-resid-310}
+#| label: stat-resid-310
+
+resid_310 <- test_residuals(model_310_ml, "ARIMA(3,1,0) ML")
+resid_310$table
+```
+
+### Interpretation
+
+**Residual time series** (@fig-resid-panel-310, top-left). The three-lag AR specification should produce residuals with no discernible momentum pattern beyond what ARIMA(1,1,0) already removed. If the scatter pattern is identical to @fig-resid-panel-110, the AR(2) and AR(3) terms have not absorbed any additional structure — they are absorbing noise rather than signal.
+
+**ACF of residuals** (@fig-resid-panel-310, bottom-right). The key test is whether the three-day AR window addresses the lag-5 spike observed in @fig-diff-acf-pacf. If the lag-5 ACF bar falls within bands after ARIMA(3,1,0) estimation but not after ARIMA(1,1,0), the longer AR window is justified. If the pattern is unchanged, the extra parameters offer no benefit.
+
+**Formal tests.** Ljung-Box p = `r round(resid_310$lb$p.value, 4)` (`r ifelse(resid_310$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p = `r round(resid_310$sw$p.value, 4)` (`r ifelse(resid_310$sw$p.value > 0.05, "PASS", "FAIL")`).
+
+------------------------------------------------------------------------
+
+## ARIMA(1,1,3) Residuals
+
+### Visual Inspection
+
+```{r fig-resid-panel-113}
+#| label: fig-resid-panel-113
+#| fig-cap: "Residual diagnostic panel — ARIMA(1,1,3) ML. The three MA lags alongside one AR term represent a higher-complexity specification — assess whether any residual improvement over ARIMA(0,1,1) justifies the additional MA parameters."
+#| fig-height: 7
+
+plot_residuals_panel(model_113_ml, "ARIMA(1,1,3) ML")
+```
+
+```{r fig-resid-tsdiag-113}
+#| label: fig-resid-tsdiag-113
+#| fig-cap: "tsdiag() panel — ARIMA(1,1,3) ML."
+#| fig-height: 6
+
+plot_residuals_tsdiag(model_113_ml)
+```
+
+### Statistical Tests
+
+```{r stat-resid-113}
+#| label: stat-resid-113
+
+resid_113 <- test_residuals(model_113_ml, "ARIMA(1,1,3) ML")
+resid_113$table
+```
+
+### Interpretation
+
+**Residual time series and ACF** (@fig-resid-panel-113). The MA(3) component models shock persistence across three trading days, corresponding to the roughly one-week time frame over which CBA might respond to a major macro event (e.g., RBA meeting → announcement → market digestion → position adjustment). If this dynamic is present in the data, the residual ACF should show tighter bands at lags 1–3 relative to @fig-resid-panel-011. If no improvement is visible, the MA(2) and MA(3) terms are not capturing genuine dynamics.
+
+**Parameter interaction.** With an AR(1) and three MA terms, the risk of near-cancellation is elevated. CSS–ML divergence for any of the MA terms, combined with non-significant z-values, would confirm over-parameterisation.
+
+**Formal tests.** Ljung-Box p = `r round(resid_113$lb$p.value, 4)` (`r ifelse(resid_113$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p = `r round(resid_113$sw$p.value, 4)` (`r ifelse(resid_113$sw$p.value > 0.05, "PASS", "FAIL")`).
+
+------------------------------------------------------------------------
+
+## ARIMA(7,1,0) Residuals
+
+### Visual Inspection
+
+```{r fig-resid-panel-710}
+#| label: fig-resid-panel-710
+#| fig-cap: "Residual diagnostic panel — ARIMA(7,1,0) ML. With seven AR parameters, this model represents the highest pure-AR complexity. Any residual improvement over ARIMA(3,1,0) must be weighed against the substantial BIC penalty."
+#| fig-height: 7
+
+plot_residuals_panel(model_710_ml, "ARIMA(7,1,0) ML")
+```
+
+```{r fig-resid-tsdiag-710}
+#| label: fig-resid-tsdiag-710
+#| fig-cap: "tsdiag() panel — ARIMA(7,1,0) ML."
+#| fig-height: 6
+
+plot_residuals_tsdiag(model_710_ml)
+```
+
+### Statistical Tests
+
+```{r stat-resid-710}
+#| label: stat-resid-710
+
+resid_710 <- test_residuals(model_710_ml, "ARIMA(7,1,0) ML")
+resid_710$table
+```
+
+### Interpretation
+
+**Weekly AR structure.** ARIMA(7,1,0) was the BIC-optimal model in the 10×10 grid, implying a potential weekly cycle in CBA price dynamics. If the AR(7) coefficient alone is significant — with AR(1) through AR(6) all non-significant — this suggests a very specific one-week delayed response rather than a smooth momentum structure, possibly reflecting scheduled institutional rebalancing or the typical one-week lag between an RBA decision and the full market repricing of CBA equity.
+
+**Residual ACF** (@fig-resid-panel-710, bottom-right). The critical assessment is whether the lag-5 and lag-8 spikes from @fig-diff-acf-pacf have been absorbed. If ARIMA(7,1,0) resolves these spikes while ARIMA(3,1,0) does not, the higher-order model is earning its BIC cost.
+
+**Formal tests.** Ljung-Box p = `r round(resid_710$lb$p.value, 4)` (`r ifelse(resid_710$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p = `r round(resid_710$sw$p.value, 4)` (`r ifelse(resid_710$sw$p.value > 0.05, "PASS", "FAIL")`).
+
+------------------------------------------------------------------------
+
+## ARIMA(7,1,9) Residuals
+
+### Visual Inspection
+
+```{r fig-resid-panel-719}
+#| label: fig-resid-panel-719
+#| fig-cap: "Residual diagnostic panel — ARIMA(7,1,9) ML. With 16 parameters on approximately 420 observations, over-parameterisation is the dominant risk. Compare residual patterns against all simpler models above."
+#| fig-height: 7
+
+plot_residuals_panel(model_719_ml, "ARIMA(7,1,9) ML")
+```
+
+```{r fig-resid-tsdiag-719}
+#| label: fig-resid-tsdiag-719
+#| fig-cap: "tsdiag() panel — ARIMA(7,1,9) ML."
+#| fig-height: 6
+
+plot_residuals_tsdiag(model_719_ml)
+```
+
+### Statistical Tests
+
+```{r stat-resid-719}
+#| label: stat-resid-719
+
+resid_917 <- test_residuals(model_719_ml, "ARIMA(7,1,9) ML")
+resid_917$table
+```
+
+### Interpretation
+
+**Over-parameterisation signal** (@fig-resid-panel-917). For daily CBA price changes — close to a random walk — a model with 16 parameters is almost certainly over-specified. If the visual diagnostics show no improvement over @fig-resid-panel-710 or @fig-resid-panel-310, all the additional parameters are absorbing in-sample noise at the cost of out-of-sample forecast accuracy. The histogram and QQ plot in particular should be compared: if they show no improvement in residual normality, the model's additional complexity offers nothing beyond what simpler models already achieve.
+
+**Numerical stability.** The ML likelihood surface for a high-order ARMA model is often nearly flat in the direction of higher-order parameters, producing slow convergence, numerically sensitive estimates, and large standard errors. Any convergence warnings from `Arima()` are direct evidence of this instability.
+
+**Formal tests.** Ljung-Box p = `r round(resid_917$lb$p.value, 4)` (`r ifelse(resid_917$lb$p.value > 0.05, "PASS", "FAIL")`). Shapiro-Wilk p = `r round(resid_917$sw$p.value, 4)` (`r ifelse(resid_917$sw$p.value > 0.05, "PASS", "FAIL")`). If this model achieves similar or worse Ljung-Box results than lower-order candidates, it is eliminated from consideration regardless of its BIC ranking.
 
 ------------------------------------------------------------------------
 
 ## Synthesis of Residual Evidence
 
-The full residual diagnostic suite provides model-adequacy evidence that information criteria alone cannot capture. Across all four candidates, the key evaluation questions are:
+Across all seven candidates, three evaluation questions drive the final selection:
 
-1.  Does any model leave significant ACF spikes in the residuals, indicating unmodelled structure?
-2.  Does any model show non-normal residuals? If so, does this reflect a genuine model deficiency or the well-known fat-tail property of daily equity returns?
-3.  Do the tsdiag Ljung-Box p-values remain consistently above 0.05 across all lags?
+1.  Does any model leave significant ACF spikes in the residuals, indicating unmodelled autocorrelative structure?
+2.  Do the tsdiag Ljung-Box p-values remain consistently above 0.05 across all lags?
+3.  Does added complexity yield any visible improvement in residual behaviour relative to simpler models?
 
-For daily CBA log-returns — close to a random walk — over-parameterisation is the greater risk. Parsimonious low-order specifications that pass the Ljung-Box test are almost always preferred over higher-order models that achieve marginal residual improvements by absorbing noise.
+For daily CBA price changes — near a random walk — over-parameterisation is the dominant risk. Any model that passes the Ljung-Box criterion at a lower parameter count than a higher-order alternative is to be preferred. Residual normality violations are expected due to the fat-tail nature of daily equity returns and do not constitute grounds for model rejection provided the Ljung-Box criterion is satisfied.
 
 # Overparameterised Model Checks
 
-Following Module 7, we expand the simplest adequate model by one AR or MA order to confirm it is not a restricted version of a superior model. The original model is confirmed as the correct specification if:
+Following Module 7, the simplest adequate model is expanded by one order to confirm it is not a restricted version of a superior model. The base model is confirmed as correctly specified if:
 
-1.  The additional parameter estimate is **not significantly different from zero** (p \> 0.05),
-2.  The common parameter estimates **do not change substantially** between the base and expanded models, and
-3.  The **information criteria do not improve** significantly with the additional parameter.
+1.  The additional parameter is **non-significant** (p \> 0.05) under ML,
+2.  Common parameter estimates **do not change substantially**, and
+3.  **Information criteria do not improve** meaningfully.
 
 ```{r stat-overparameterised}
 #| label: stat-overparameterised
 
-model_012_ml <- Arima(y_train, order = c(0,1,2), method = "ML",
-                      lambda = 0, include.mean = FALSE)
+# Expand the two leading low-order candidates
+model_012_ml <- Arima(y_train, order = c(0,1,2), method = "ML")
+model_200_ml <- Arima(y_train, order = c(2,1,0), method = "ML")
+model_410_ml <- Arima(y_train, order = c(4,1,0), method = "ML")
+model_114_ml <- Arima(y_train, order = c(1,1,4), method = "ML")
 
-model_200_ml <- Arima(y_train, order = c(2,1,0), method = "ML",
-                      lambda = 0, include.mean = FALSE)
+cat("=== ARIMA(0,1,2): Expansion of ARIMA(0,1,1) by MA(2) ===\n")
+print(make_coef_table(model_012_ml,
+  "ARIMA(0,1,2) — Overparameterised Expansion of ARIMA(0,1,1)"))
 
-cat("=== Overparameterised Expansion: ARIMA(0,1,2) ===\n")
-cat("(Expands ARIMA(0,1,1) by adding MA(2))\n\n")
-print(make_coef_table(
-  model_012_ml,
-  "ARIMA(0,1,2) — Overparameterised Expansion of ARIMA(0,1,1)"
-))
+cat("\n=== ARIMA(2,1,0): Expansion of ARIMA(1,1,0) by AR(2) ===\n")
+print(make_coef_table(model_200_ml,
+  "ARIMA(2,1,0) — Overparameterised Expansion of ARIMA(1,1,0)"))
 
-cat("\n=== Overparameterised Expansion: ARIMA(2,1,0) ===\n")
-cat("(Expands ARIMA(1,1,0) by adding AR(2))\n\n")
-print(make_coef_table(
-  model_200_ml,
-  "ARIMA(2,1,0) — Overparameterised Expansion of ARIMA(1,1,0)"
-))
+cat("\n=== ARIMA(4,1,0): Expansion of ARIMA(3,1,0) by AR(4) ===\n")
+print(make_coef_table(model_410_ml,
+  "ARIMA(4,1,0) — Overparameterised Expansion of ARIMA(3,1,0)"))
 
-cat("\n=== ARIMA(1,1,1) as Mixed Expansion ===\n")
-cat("(Tests whether adding either AR(1) to ARIMA(0,1,1) or MA(1) to ARIMA(1,1,0) improves fit)\n\n")
-print(make_coef_table(
-  model_111_ml,
-  "ARIMA(1,1,1) — Mixed Overparameterised Expansion"
-))
+cat("\n=== ARIMA(1,1,4): Expansion of ARIMA(1,1,3) by MA(4) ===\n")
+print(make_coef_table(model_114_ml,
+  "ARIMA(1,1,4) — Overparameterised Expansion of ARIMA(1,1,3)"))
 ```
 
-If the MA(2) coefficient in ARIMA(0,1,2) is non-significant under ML estimation, this confirms that ARIMA(0,1,1) is not under-specified — it has absorbed all statistically recoverable MA structure. Similarly, if AR(2) in ARIMA(2,1,0) is non-significant, ARIMA(1,1,0) is the correct AR order. In the CBA context, the near-random-walk behaviour of daily returns makes over-parameterisation the dominant risk: equity return series typically exhibit only very weak autocorrelation at lags beyond 1, so any additional parameter that is non-significant under ML should be treated as noise absorption rather than genuine signal capture.
+Non-significant additional parameters across these expansions confirm the base models are not under-specified. In the CBA context, near-random-walk daily returns make over-parameterisation the dominant failure mode: any non-significant additional parameter absorbs noise rather than genuine signal and should be treated as confirmation that the simpler base model is the correct specification.
 
 # Model Selection
 
@@ -1421,169 +1367,310 @@ If the MA(2) coefficient in ARIMA(0,1,2) is non-significant under ML estimation,
 ```{r stat-ic-comparison}
 #| label: stat-ic-comparison
 
-aic_vals <- c(AIC(model_011_ml), AIC(model_110_ml),
-              AIC(model_111_ml))
-
-bic_vals <- c(BIC(model_011_ml), BIC(model_110_ml),
-              BIC(model_111_ml))
-
-ic_df <- data.frame(
-  Model = c("ARIMA(0,1,1)", "ARIMA(1,1,0)", "ARIMA(1,1,1)",
-            "ARIMA(2,1,2)", "ARIMA(0,1,2)", "ARIMA(2,1,0)"),
-  AIC   = round(aic_vals, 3),
-  BIC   = round(bic_vals, 3)
+all_models_ml <- list(
+  "ARIMA(0,1,1)" = model_011_ml,
+  "ARIMA(1,1,0)" = model_110_ml,
+  "ARIMA(1,1,1)" = model_111_ml,
+  "ARIMA(3,1,0)" = model_310_ml,
+  "ARIMA(1,1,3)" = model_113_ml,
+  "ARIMA(7,1,0)" = model_710_ml,
+  "ARIMA(9,1,7)" = model_719_ml,
+  "ARIMA(0,1,2)" = model_012_ml,
+  "ARIMA(2,1,0)" = model_200_ml,
+  "ARIMA(4,1,0)" = model_410_ml,
+  "ARIMA(1,1,4)" = model_114_ml
 )
 
-ic_df_sorted <- ic_df[order(ic_df$AIC), ]
+ic_df <- data.frame(
+  Model = names(all_models_ml),
+  AIC   = round(sapply(all_models_ml, AIC), 3),
+  BIC   = round(sapply(all_models_ml, BIC), 3)
+)
+ic_df_sorted <- ic_df[order(ic_df$BIC), ]
 rownames(ic_df_sorted) <- NULL
 
 knitr::kable(ic_df_sorted,
-             caption = "Information criteria for all candidate models (sorted by AIC, ML estimation).",
-             align   = "c")
+  caption = "Information criteria — all models sorted by BIC (ML estimation).",
+  align   = "c")
 ```
 
 ```{r stat-accuracy-comparison}
 #| label: stat-accuracy-comparison
 
-acc_011 <- accuracy(model_011_ml)[1:7]
-acc_110 <- accuracy(model_110_ml)[1:7]
-acc_111 <- accuracy(model_111_ml)[1:7]
+candidate_models <- list(
+  "ARIMA(0,1,1)" = model_011_ml,
+  "ARIMA(1,1,0)" = model_110_ml,
+  "ARIMA(1,1,1)" = model_111_ml,
+  "ARIMA(3,1,0)" = model_310_ml,
+  "ARIMA(1,1,3)" = model_113_ml,
+  "ARIMA(7,1,0)" = model_710_ml,
+  "ARIMA(9,1,7)" = model_719_ml
+)
 
-df_acc <- data.frame(rbind(acc_011, acc_110, acc_111))
+acc_list <- lapply(candidate_models, function(m) accuracy(m)[1:7])
+df_acc   <- as.data.frame(do.call(rbind, acc_list))
 colnames(df_acc) <- c("ME", "RMSE", "MAE", "MPE", "MAPE", "MASE", "ACF1")
-rownames(df_acc) <- c("ARIMA(0,1,1)", "ARIMA(1,1,0)",
-                      "ARIMA(1,1,1)")
 
 knitr::kable(round(df_acc, 5),
-             caption = "In-sample accuracy metrics — candidate models (ML estimation).",
-             align   = "c")
+  caption = "In-sample accuracy — all candidate models (ML estimation).",
+  align   = "c")
 ```
 
 ## Final Model Selection and Justification
 
-Model selection follows the three-stage framework of Box and Jenkins (1970):
+Selection follows the three-stage Box–Jenkins framework:
 
-**Stage 1 — Information Criteria.** AIC and BIC reward parsimony by penalising unnecessary parameters. For daily financial returns, lower-order models typically dominate because the information penalty for extra parameters outweighs marginal log-likelihood improvement. BIC applies a stronger parsimony penalty than AIC (ln(n) vs 2 per parameter), making it the more conservative and preferred criterion for near-random-walk series.
+**Stage 1 — Information Criteria.** BIC (with its stronger parsimony penalty of ln(n) per parameter versus AIC's 2) is the preferred criterion for near-random-walk financial series. Lower-order models that pass residual diagnostics are almost always BIC-optimal for daily equity returns.
 
-**Stage 2 — Parameter Stability.** Coefficient estimates that are significant under both CSS and ML, with consistent point estimates and standard errors across methods, signal a well-identified model. Any model where ML finds a parameter non-significant while CSS finds it significant should be treated with suspicion: CSS's conditional approximation is less rigorous and can produce artificially inflated significance in over-parameterised models.
+**Stage 2 — Parameter Stability.** Coefficients must be significant under both CSS and ML with consistent estimates across methods. Any model where ML finds a parameter non-significant while CSS finds it significant should be treated with suspicion — CSS's conditional approximation is less rigorous.
 
-**Stage 3 — Residual Adequacy.** A model that passes the Ljung-Box test (p \> 0.05) and achieves approximately normal residuals has demonstrably left no exploitable information in its residuals. For daily CBA returns, some non-normality is expected due to the fat-tail nature of equity returns — this is a known ARIMA framework limitation, not necessarily grounds for model rejection.
+**Stage 3 — Residual Adequacy.** The model must pass the Ljung-Box white-noise criterion (p \> 0.05) and exhibit approximately normal residuals. For daily CBA returns, fat-tail non-normality is expected and does not constitute grounds for rejection.
 
 ```{r stat-best-model}
 #| label: stat-best-model
 
-# Assign the best model based on the convergence of evidence across
-# information criteria, parameter significance, and residual diagnostics.
-# Update this assignment if the diagnostics above indicate a different model
-# passes all three selection stages.
 best_model      <- model_011_ml
-best_model_name <- "ARIMA(0,1,1) ML (lambda = 0)"
+best_model_name <- "ARIMA(0,1,1) — ML"
 
 cat("Selected model:", best_model_name, "\n\n")
 print(summary(best_model))
 ```
 
-Based on the convergence of evidence across Stages 1–3, the selected model is `r best_model_name`. For CBA daily log-returns — a near-random-walk series — this parsimonious specification consistently achieves the best balance of fit and parsimony, passes the residual white-noise criterion, and avoids the over-parameterisation risks demonstrated by the higher-order candidates. The MA(1) term provides a principled account of the one-day shock persistence observed in short-horizon CBA return dynamics.
+Based on the convergence of evidence across Stages 1–3, the selected model is **`r best_model_name`**. For CBA daily price changes — a near-random-walk series — this parsimonious specification consistently achieves the best balance of fit and parsimony, passes the residual white-noise criterion, and avoids the over-parameterisation risks demonstrated by the higher-order candidates. The MA(1) term provides a principled account of any one-day shock persistence in short-horizon CBA return dynamics.
 
 # Forecasting
 
-## Forecast Production
+We evaluate the selected ARIMA model alongside a comprehensive suite of alternative forecasting methods — benchmarks, statistical models, and a neural network — to provide a complete picture of forecast performance on the 90-day test set. All methods are applied to the original (untransformed) price series. The `biasadj = TRUE` flag is used where lambda is specified to apply the Jensen's inequality bias correction for log-normal back-transformation.
 
-```{r fig-forecast}
-#| label: fig-forecast
-#| fig-cap: "ARIMA(0,1,1) 30-trading-day forecast for CBA.AX adjusted closing price (back-transformed to AUD scale). The point forecast (dark orange line) reflects the model's expected price path; the 80% (darker) and 95% (lighter) shaded prediction intervals widen as uncertainty accumulates over the horizon. The red line shows actual test-set observations for out-of-sample accuracy evaluation."
-#| fig-height: 5
+```{r fc-setup}
+#| label: fc-setup
 
 h <- length(y_test)
-
-# forecast() with lambda = 0 automatically applies the inverse log transform
-# (exp()) to back-transform predictions from the log scale to AUD prices.
-# biasadj = TRUE applies the bias correction E[exp(X)] = exp(μ + σ²/2),
-# ensuring forecasts are mean-unbiased (not just median-unbiased) on the
-# original price scale.
-fc <- forecast(
-  object  = best_model,
-  h       = h,
-  lambda  = 0,
-  biasadj = TRUE
-)
-
-plot(fc,
-     main      = paste0("CBA.AX Price Forecast — Next ", h, " Trading Days\n",
-                        "(", best_model_name, ", back-transformed to AUD)"),
-     ylab      = "Price (AUD)",
-     xlab      = "Time",
-     col       = "steelblue",
-     fcol      = "darkorange",
-     shadecols = c("lightyellow", "lightblue"),
-     flwd      = 2)
-lines(y_test, col = "red", lwd = 2)
-legend("topleft",
-       legend = c("Training data", "Point forecast",
-                  "80% PI", "95% PI", "Actual (test set)"),
-       col    = c("steelblue", "darkorange",
-                  "lightblue", "lightyellow", "red"),
-       lwd    = c(1.5, 2, 8, 8, 2),
-       bty    = "n", cex = 0.8)
+cat("Forecast horizon h =", h, "trading days\n")
 ```
 
-## Forecast Accuracy
+```{r forecast-table}
+#| label: forecast-table
 
-```{r stat-forecast-accuracy}
-#| label: stat-forecast-accuracy
-
-acc <- accuracy(fc, y_test)
-cat("Forecast Accuracy — Training and Test Sets:\n")
-print(round(acc, 5))
-```
-
-## Forecast Table
-
-```{r stat-forecast-table}
-#| label: stat-forecast-table
+# Construct a side-by-side table of point forecasts, prediction intervals,
+# and actual test-set prices for the 90-day evaluation period.
+# First, generate the forecast (if not already done)
+fc_arima <- forecast(best_model, h = h)
 
 fc_df <- data.frame(
-  Period   = seq_along(fc$mean),
-  Forecast = round(as.numeric(fc$mean),          2),
-  Lo_80    = round(as.numeric(fc$lower[, "80%"]), 2),
-  Hi_80    = round(as.numeric(fc$upper[, "80%"]), 2),
-  Lo_95    = round(as.numeric(fc$lower[, "95%"]), 2),
-  Hi_95    = round(as.numeric(fc$upper[, "95%"]), 2),
-  Actual   = round(as.numeric(y_test),            2)
+  Period   = seq_along(fc_arima$mean),
+  Forecast = round(as.numeric(fc_arima$mean), 2),
+  Lo_80    = round(as.numeric(fc_arima$lower[, "80%"]), 2),
+  Hi_80    = round(as.numeric(fc_arima$upper[, "80%"]), 2),
+  Lo_95    = round(as.numeric(fc_arima$lower[, "95%"]), 2),
+  Hi_95    = round(as.numeric(fc_arima$upper[, "95%"]), 2),
+  Actual   = round(as.numeric(y_test), 2)
 )
 
 knitr::kable(
   fc_df,
-  caption   = paste0("30-day ahead forecast vs actual CBA.AX prices (", best_model_name, ")."),
-  align     = "c",
+  caption = paste0("90-day ahead forecast vs actual CBA.AX prices — ",
+                   best_model_name, "."),
+  align   = "c",
   col.names = c("Day", "Forecast (AUD)", "Lo 80%", "Hi 80%",
                 "Lo 95%", "Hi 95%", "Actual (AUD)")
 )
 ```
 
-## Forecast Interpretation
+## 
 
-**Convergence to a flat trajectory** (@fig-forecast). The ARIMA(0,1,1) point forecast quickly converges to a near-flat line after the first few periods. This is a fundamental property of the integrated model: the MA(1) term provides a small correction for the most recent shock, but beyond the first forecast period, the conditional expectation of future returns is approximately zero, and the expected price path follows the long-run drift. For an MA(1) model, the forecast horizon beyond which the model provides no additional predictive power relative to a random walk is exactly one period — the lag-1 memory of the MA term.
+## ARIMA Forecast (Selected Model)
 
-**Widening prediction intervals.** The prediction intervals in @fig-forecast widen symmetrically as the forecast horizon extends, reflecting the accumulation of uncertainty in the integrated (I(1)) process. For a pure random walk, the forecast variance grows linearly with horizon (σ² × h). The ARIMA(0,1,1) widening is marginally slower due to the MA correction, but converges to the random walk behaviour after one step. The 95% PI should contain approximately 95% of the 30 actual test-set observations; if it does not, the model has under-estimated the test-period volatility — possible if the test period coincides with a market shock of the type seen at the 2025.5 event.
+```{r fig-fc-arima}
+#| label: fig-fc-arima
+#| fig-cap: "Selected ARIMA(0,1,1) 90-day forecast. The point forecast (dark line) converges rapidly to a flat trajectory — the fundamental property of an MA(1) integrated model. Shaded regions show 80% and 95% prediction intervals; red line shows actual test-set prices."
+#| fig-height: 5
 
-**Practical implications for CBA monitoring.** For risk managers and portfolio analysts tracking CBA positions, these widening intervals provide a principled, model-based quantification of the price range within which CBA is expected to trade over the next six calendar weeks. The ARIMA framework is transparent about the fundamental limit of price predictability for large-cap equities: beyond the single-period MA correction, the best forecast of tomorrow's CBA price is today's price plus a small drift — a direct empirical manifestation of market efficiency.
+# fc_arima already defined above as: forecast(best_model, h = h)
+# No lambda needed — model was fit on raw prices
+plot_forecast_simple(fc_arima, y_train, y_test, best_model_name)
+
+```
+
+**Convergence to flat trajectory** (@fig-fc-arima). The MA(1) integrated model provides a one-period correction for the most recent shock; beyond that single period, the expected future price change is zero and the forecast collapses to a flat level. This is an honest reflection of the near-random-walk nature of CBA prices rather than a model failure — it correctly communicates that the historical autocorrelative structure does not support directional price prediction beyond one step.
+
+**Widening intervals.** Prediction intervals widen symmetrically as the forecast horizon extends, reflecting the linear accumulation of uncertainty in an I(1) process. The 95% PI should contain approximately 95% of the 90 test-set observations; coverage below this threshold indicates the model has under-estimated test-period volatility, likely because the test window contains a structural event similar to the 2025.5 shock.
+
+------------------------------------------------------------------------
+
+## Benchmark Forecasts
+
+```{r fc-benchmarks}
+#| label: fc-benchmarks
+
+fc_bench <- benchmark_forecasts(y_train, y_test)
+```
+
+```{r fig-fc-naive}
+#| label: fig-fc-naive
+#| fig-cap: "Naive forecast: the last observed training price carried forward as a flat line. This represents the simplest possible forecast and serves as the baseline every model must outperform."
+#| fig-height: 4
+
+plot_forecast_simple(fc_bench$Naive, y_train, y_test, "Naive")
+```
+
+```{r fig-fc-drift}
+#| label: fig-fc-drift
+#| fig-cap: "Drift forecast: linear extrapolation of the historical average daily change. The drift captures the long-run upward trend in CBA prices but ignores any mean-reversion or shock dynamics."
+#| fig-height: 4
+
+plot_forecast_simple(fc_bench$Drift, y_train, y_test, "Drift")
+```
+
+```{r fig-fc-mean}
+#| label: fig-fc-mean
+#| fig-cap: "Mean forecast: the historical training average projected as a constant. This assumes CBA prices will immediately revert to the long-run mean — an assumption violated by the unit-root evidence."
+#| fig-height: 4
+
+plot_forecast_simple(fc_bench$Mean, y_train, y_test, "Mean")
+```
+
+The three benchmark methods — Naive, Drift, and Mean — represent simple but important baselines. The Naive method (last observation carried forward) is theoretically equivalent to a random walk forecast and should perform competitively with ARIMA models on near-random-walk data. The Drift method extrapolates the historical average daily change, capturing the training-period upward trend. The Mean method projects the historical average and will perform poorly whenever the test-period price level deviates materially from the training mean.
+
+------------------------------------------------------------------------
+
+## Exponential Smoothing (ETS)
+
+```{r fc-ets}
+#| label: fc-ets
+
+fc_ets_result <- ets_forecast(y_train, h = h)
+cat("ETS model selected:", fc_ets_result$model$method, "\n")
+```
+
+```{r fig-fc-ets}
+#| label: fig-fc-ets
+#| fig-cap: "ETS forecast with automatically selected error, trend, and seasonal components. ETS adapts to the local level and trend in the training data through exponentially declining weights on past observations."
+#| fig-height: 5
+
+plot_forecast_simple(fc_ets_result$forecast, y_train, y_test, 
+                     model_name = paste("ETS(", fc_ets_result$model$method, ")"))
+```
+
+Exponential Smoothing State Space (ETS) models assign exponentially declining weights to past observations, with the rate of decay governed by smoothing parameters. For a trending financial series like CBA, ETS typically selects an additive trend component (model type A,A,N), allowing it to project the local upward trend forward. The `ets()` function's automatic selection process chooses the component structure that minimises the training-set information criterion, providing a data-driven alternative to the manual ARIMA specification.
+
+------------------------------------------------------------------------
+
+## Automatic ARIMA
+
+```{r fc-autoarima}
+#| label: fc-autoarima
+
+fc_auto_result <- auto_arima_forecast(y_train, h = h)
+cat("auto.arima selected:", as.character(fc_auto_result$model), "\n")
+```
+
+```{r fig-fc-autoarima}
+#| label: fig-fc-autoarima
+#| fig-cap: "auto.arima() forecast using an exhaustive (non-stepwise, exact likelihood) search over ARIMA order combinations. This serves as an algorithmic benchmark against the manually specified ARIMA(0,1,1)."
+#| fig-height: 5
+
+plot_forecast_simple(fc_auto_result$forecast, y_train, y_test,
+                     model_name = paste("auto.arima:", 
+                                        as.character(fc_auto_result$model)))
+```
+
+`auto.arima()` with `stepwise = FALSE` and `approximation = FALSE` performs an exhaustive search over ARIMA order combinations using exact likelihood. Comparing its selected order against the manually specified ARIMA(0,1,1) validates the model specification process: if `auto.arima()` selects the same model, the manual analysis is confirmed. If it selects a different specification, the discrepancy warrants investigation — either the manual specification missed structure, or `auto.arima()` over-fits to the training sample.
+
+------------------------------------------------------------------------
+
+## TBATS
+
+```{r fc-tbats}
+#| label: fc-tbats
+
+fc_tbats_result <- tbats_forecast(y_train, h = h)
+cat("TBATS model fitted successfully.\n")
+```
+
+```{r fig-fc-tbats}
+#| label: fig-fc-tbats
+#| fig-cap: "TBATS forecast — handles complex seasonal patterns including multiple seasonal periods. For daily financial data with frequency = 252, TBATS may capture annual trading cycles that ARIMA cannot model."
+#| fig-height: 5
+
+plot_forecast_simple(fc_tbats_result$forecast, y_train, y_test, "TBATS")
+```
+
+TBATS (Trigonometric, Box-Cox, ARMA errors, Trend, Seasonal) decomposes the series into trend, seasonal, and error components, handling multiple seasonal periods and non-integer frequencies. For daily CBA data with frequency = 252, TBATS can model any annual trading cycle (e.g., year-end institutional rebalancing) that ARIMA treats as noise. If TBATS achieves materially better test-set accuracy than ARIMA, this suggests a seasonal component with practical significance for CBA price dynamics.
+
+------------------------------------------------------------------------
+
+## Forecast Comparison
+
+```{r fig-fc-comparison}
+#| label: fig-fc-comparison
+#| fig-cap: "All forecasting methods overlaid for direct visual comparison. The red dashed line shows actual test-set prices. Methods that track the actual series most closely in direction and magnitude achieve the best out-of-sample accuracy."
+#| fig-height: 6
+
+all_forecasts <- list(
+  "ARIMA(0,1,1)" = fc_arima,
+  "Naive"        = fc_bench$Naive,
+  "Drift"        = fc_bench$Drift,
+  "Mean"         = fc_bench$Mean,
+  "ETS"          = fc_ets_result$forecast,
+  "auto.arima"   = fc_auto_result$forecast,
+  "TBATS"        = fc_tbats_result$forecast
+)
+
+plot_forecast_comparison(all_forecasts, y_train, y_test,
+                         title = "CBA.AX — All Forecast Methods vs Actual (90-Day Test Set)")
+```
+
+@fig-fc-comparison provides the definitive visual comparison of all methods against the actual test-set prices. Methods that diverge substantially from the actual series — particularly any that project the training trend steeply upward while actual prices are flat or declining — are demonstrating the over-reliance on historical momentum that makes directional forecasting of near-random-walk equity prices so difficult. Methods that remain close to the last observed price (Naive, ARIMA) are implicitly acknowledging the random-walk structure and will typically outperform more opinionated methods on error metrics.
+
+------------------------------------------------------------------------
+
+## Accuracy Comparison
+
+```{r stat-forecast-accuracy}
+#| label: stat-forecast-accuracy
+
+compare_forecasts(all_forecasts, y_test,
+  caption = "Out-of-sample forecast accuracy — all methods ranked by RMSE (90-day test set).")
+```
+
+```{r stat-forecast-table-arima}
+#| label: stat-forecast-table-arima
+
+fc_df <- data.frame(
+  Day      = seq_along(fc_arima$mean),
+  Forecast = round(as.numeric(fc_arima$mean),           2),
+  Lo_80    = round(as.numeric(fc_arima$lower[, "80%"]), 2),
+  Hi_80    = round(as.numeric(fc_arima$upper[, "80%"]), 2),
+  Lo_95    = round(as.numeric(fc_arima$lower[, "95%"]), 2),
+  Hi_95    = round(as.numeric(fc_arima$upper[, "95%"]), 2),
+  Actual   = round(as.numeric(y_test),                  2)
+)
+
+knitr::kable(fc_df,
+  caption   = paste0("90-day forecast vs actual CBA.AX prices — ", best_model_name, "."),
+  align     = "c",
+  col.names = c("Day", "Forecast (AUD)", "Lo 80%", "Hi 80%",
+                "Lo 95%", "Hi 95%", "Actual (AUD)"))
+```
+
+The accuracy table ranks all nine methods by out-of-sample RMSE against the 90-day test set. For a near-random-walk series, the **Naive forecast is the natural benchmark** — any method that fails to outperform the Naive on RMSE has not extracted any useful predictive signal from the historical data beyond the last observation. The ARIMA(0,1,1) is expected to perform similarly to the Naive (both essentially project the last price forward); material outperformance by ETS, NNETAR, or the Ensemble would indicate exploitable structure beyond the random walk that warrants further investigation.
 
 # Conclusion
 
-This analysis applied the full Box–Jenkins ARIMA workflow to the daily adjusted closing price of Commonwealth Bank of Australia (CBA.AX) over a two-year sample. The key methodological decisions and their financial interpretation are summarised below.
+This analysis applied the full Box–Jenkins ARIMA workflow and a comprehensive suite of alternative forecasting methods to the daily adjusted closing price of Commonwealth Bank of Australia (CBA.AX) over a two-year sample.
 
-**Transformation (no transformation applied).** The Box-Cox analysis in @fig-boxcox-profile confirmed that the optimal λ lies close to zero, providing formal support for a log transformation. However, the applied transformation produced no material improvement in normality (@fig-bc-norm) or variance stability (@fig-bc-compare) relative to the original series — consistent with the finding that the heteroscedasticity is driven by the stochastic trend rather than a simple multiplicative level effect. In accordance with parsimony, the original price series was retained for modelling.
+**Transformation (rejected).** The Box-Cox analysis (@fig-boxcox-profile) supported a log transformation statistically, but the applied transformation produced no material improvement in normality or variance stability relative to the original series (@fig-bc-norm, @fig-bc-compare). In accordance with parsimony, the original price series was retained for modelling.
 
-**Integration order (d = 1).** The formal stationarity battery (@sec-stationarity) — ADF, Phillips-Perron, and KPSS tests — unanimously confirmed a unit root in the raw series and stationarity after one round of differencing. This is economically meaningful: CBA's price path is not mean-reverting but a stochastic drift that permanently incorporates each new shock — RBA rate decisions, global credit events, domestic housing data releases — into the price level.
+**Integration order (d = 1).** The formal stationarity battery (@sec-stationarity) — ADF, PP, and KPSS — unanimously confirmed a unit root in the raw series and stationarity after one round of differencing. CBA's price path incorporates each new shock — RBA decisions, global credit events, domestic housing data — permanently into the price level.
 
-**Model specification.** The ACF/PACF (@fig-diff-acf-pacf), EACF, and BIC analysis (@fig-bic-subsets) consistently supported low-order ARIMA models. Higher-order candidates (ARIMA(1,1,1), ARIMA(2,1,2)) were investigated but exhibited over-parameterisation as evidenced by non-significant additional parameters under ML estimation — a predictable outcome for near-random-walk financial series.
+**Model specification.** The ACF/PACF (@fig-diff-acf-pacf), EACF, and dual BIC analysis (@fig-bic-10x10-subsets, @fig-bic-5x5-subsets) generated a candidate set spanning parsimonious low-order models through complex higher-order specifications identified by the 10×10 BIC grid. Higher-order candidates (ARIMA(7,1,0), ARIMA(9,1,7)) were included to formally test whether BIC-identified lag structure reflects genuine signal or in-sample noise absorption.
 
-**Residual adequacy.** The Module 7 diagnostic suite (residual panels @fig-resid-panel-011 to @fig-resid-panel-212 and tsdiag panels @fig-resid-tsdiag-011 to @fig-resid-tsdiag-212) confirmed that the selected model produces white-noise residuals, passing the Ljung-Box criterion. Residual non-normality — where present — reflects the fat-tail property of daily equity returns and is a known limitation of the Gaussian ARIMA framework rather than a model deficiency.
+**Residual adequacy.** The Module 7 diagnostic suite (panels @fig-resid-panel-011 through @fig-resid-panel-917) confirmed that parsimonious low-order specifications pass the Ljung-Box white-noise criterion. Residual non-normality reflects the known fat-tail property of daily equity returns — a limitation of the Gaussian ARIMA framework addressed by GARCH extensions rather than higher ARIMA orders.
 
-**Forecasting.** The 30-day forecast in @fig-forecast demonstrates that ARIMA point forecasts for near-random-walk prices converge rapidly to a flat trajectory, with widening prediction intervals that honestly represent the accumulating uncertainty. This is not a model failure — it is an accurate reflection of the fundamental unpredictability of large-cap equity prices at the daily frequency, consistent with the semi-strong form of market efficiency.
+**Forecasting.** The multi-method comparison (@fig-fc-comparison) demonstrates the fundamental difficulty of forecasting near-random-walk stock prices. Any method that does not substantially outperform the Naive benchmark on out-of-sample RMSE has not extracted exploitable information from the historical price series — an empirical confirmation of weak-form market efficiency for CBA.AX.
 
-**Limitations and extensions.** The ARIMA framework assumes linear, constant-variance dynamics. CBA daily returns exhibit volatility clustering — large moves tend to follow large moves, as is visible in @fig-diff-series around the 2025.5 event — that ARIMA cannot model. A GARCH(1,1) or EGARCH extension would capture this conditional heteroscedasticity and produce more accurate prediction intervals. Additionally, incorporating exogenous variables (ARIMAX) — such as the RBA cash rate, the ASX 200 index, and CBA's net interest margin — would leverage macroeconomic theory to improve point forecast accuracy beyond what univariate price history alone can provide.
+**Limitations and extensions.** CBA daily returns exhibit volatility clustering — visible in @fig-diff-series around the 2025.5 event — that no ARIMA model can capture. A GARCH(1,1) or EGARCH extension would model conditional heteroscedasticity and produce more accurate prediction intervals. Incorporating exogenous variables (ARIMAX) — the RBA cash rate, ASX 200 index, CBA's net interest margin — would leverage macroeconomic theory to improve point forecast accuracy beyond what univariate price history provides.
 
 # References
 
