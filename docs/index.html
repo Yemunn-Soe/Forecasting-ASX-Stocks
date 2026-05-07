@@ -5148,14 +5148,13 @@ border: 0;
   </ul></li>
   <li><a href="#forecasting" id="toc-forecasting" class="nav-link" data-scroll-target="#forecasting"><span class="header-section-number">11</span> Forecasting</a>
   <ul class="collapse">
-  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section"><span class="header-section-number">11.1</span> </a></li>
-  <li><a href="#arima-forecast-selected-model" id="toc-arima-forecast-selected-model" class="nav-link" data-scroll-target="#arima-forecast-selected-model"><span class="header-section-number">11.2</span> ARIMA Forecast (Selected Model)</a></li>
-  <li><a href="#benchmark-forecasts" id="toc-benchmark-forecasts" class="nav-link" data-scroll-target="#benchmark-forecasts"><span class="header-section-number">11.3</span> Benchmark Forecasts</a></li>
-  <li><a href="#exponential-smoothing-ets" id="toc-exponential-smoothing-ets" class="nav-link" data-scroll-target="#exponential-smoothing-ets"><span class="header-section-number">11.4</span> Exponential Smoothing (ETS)</a></li>
-  <li><a href="#automatic-arima" id="toc-automatic-arima" class="nav-link" data-scroll-target="#automatic-arima"><span class="header-section-number">11.5</span> Automatic ARIMA</a></li>
-  <li><a href="#tbats" id="toc-tbats" class="nav-link" data-scroll-target="#tbats"><span class="header-section-number">11.6</span> TBATS</a></li>
-  <li><a href="#forecast-comparison" id="toc-forecast-comparison" class="nav-link" data-scroll-target="#forecast-comparison"><span class="header-section-number">11.7</span> Forecast Comparison</a></li>
-  <li><a href="#accuracy-comparison" id="toc-accuracy-comparison" class="nav-link" data-scroll-target="#accuracy-comparison"><span class="header-section-number">11.8</span> Accuracy Comparison</a></li>
+  <li><a href="#arima-forecast-selected-model" id="toc-arima-forecast-selected-model" class="nav-link" data-scroll-target="#arima-forecast-selected-model"><span class="header-section-number">11.1</span> ARIMA Forecast (Selected Model)</a></li>
+  <li><a href="#benchmark-forecasts" id="toc-benchmark-forecasts" class="nav-link" data-scroll-target="#benchmark-forecasts"><span class="header-section-number">11.2</span> Benchmark Forecasts</a></li>
+  <li><a href="#exponential-smoothing-ets" id="toc-exponential-smoothing-ets" class="nav-link" data-scroll-target="#exponential-smoothing-ets"><span class="header-section-number">11.3</span> Exponential Smoothing (ETS)</a></li>
+  <li><a href="#automatic-arima" id="toc-automatic-arima" class="nav-link" data-scroll-target="#automatic-arima"><span class="header-section-number">11.4</span> Automatic ARIMA</a></li>
+  <li><a href="#tbats" id="toc-tbats" class="nav-link" data-scroll-target="#tbats"><span class="header-section-number">11.5</span> TBATS</a></li>
+  <li><a href="#forecast-comparison" id="toc-forecast-comparison" class="nav-link" data-scroll-target="#forecast-comparison"><span class="header-section-number">11.6</span> Forecast Comparison</a></li>
+  <li><a href="#accuracy-comparison" id="toc-accuracy-comparison" class="nav-link" data-scroll-target="#accuracy-comparison"><span class="header-section-number">11.7</span> Accuracy Comparison</a></li>
   </ul></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="header-section-number">12</span> Conclusion</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">13</span> References</a></li>
@@ -9226,11 +9225,8 @@ Training set -0.002429224</code></pre>
 </table>
 </div>
 </div>
-<section id="section" class="level2" data-number="11.1">
-<h2 data-number="11.1" class="anchored" data-anchor-id="section"><span class="header-section-number">11.1</span> </h2>
-</section>
-<section id="arima-forecast-selected-model" class="level2" data-number="11.2">
-<h2 data-number="11.2" class="anchored" data-anchor-id="arima-forecast-selected-model"><span class="header-section-number">11.2</span> ARIMA Forecast (Selected Model)</h2>
+<section id="arima-forecast-selected-model" class="level2" data-number="11.1">
+<h2 data-number="11.1" class="anchored" data-anchor-id="arima-forecast-selected-model"><span class="header-section-number">11.1</span> ARIMA Forecast (Selected Model)</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -9255,8 +9251,8 @@ Figure 33: Selected ARIMA(0,1,1) 90-day forecast. The point forecast (dark line
 <p><strong>Widening intervals.</strong> Prediction intervals widen symmetrically as the forecast horizon extends, reflecting the linear accumulation of uncertainty in an I(1) process. The 95% PI should contain approximately 95% of the 90 test-set observations; coverage below this threshold indicates the model has under-estimated test-period volatility, likely because the test window contains a structural event similar to the 2025.5 shock.</p>
 <hr>
 </section>
-<section id="benchmark-forecasts" class="level2" data-number="11.3">
-<h2 data-number="11.3" class="anchored" data-anchor-id="benchmark-forecasts"><span class="header-section-number">11.3</span> Benchmark Forecasts</h2>
+<section id="benchmark-forecasts" class="level2" data-number="11.2">
+<h2 data-number="11.2" class="anchored" data-anchor-id="benchmark-forecasts"><span class="header-section-number">11.2</span> Benchmark Forecasts</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -9320,8 +9316,8 @@ Figure 36: Mean forecast: the historical training average projected as a consta
 <p>The three benchmark methods — Naive, Drift, and Mean — represent simple but important baselines. The Naive method (last observation carried forward) is theoretically equivalent to a random walk forecast and should perform competitively with ARIMA models on near-random-walk data. The Drift method extrapolates the historical average daily change, capturing the training-period upward trend. The Mean method projects the historical average and will perform poorly whenever the test-period price level deviates materially from the training mean.</p>
 <hr>
 </section>
-<section id="exponential-smoothing-ets" class="level2" data-number="11.4">
-<h2 data-number="11.4" class="anchored" data-anchor-id="exponential-smoothing-ets"><span class="header-section-number">11.4</span> Exponential Smoothing (ETS)</h2>
+<section id="exponential-smoothing-ets" class="level2" data-number="11.3">
+<h2 data-number="11.3" class="anchored" data-anchor-id="exponential-smoothing-ets"><span class="header-section-number">11.3</span> Exponential Smoothing (ETS)</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -9361,8 +9357,8 @@ Figure 37: ETS forecast with automatically selected error, trend, and seasonal 
 <p>Exponential Smoothing State Space (ETS) models assign exponentially declining weights to past observations, with the rate of decay governed by smoothing parameters. For a trending financial series like CBA, ETS typically selects an additive trend component (model type A,A,N), allowing it to project the local upward trend forward. The <code>ets()</code> function’s automatic selection process chooses the component structure that minimises the training-set information criterion, providing a data-driven alternative to the manual ARIMA specification.</p>
 <hr>
 </section>
-<section id="automatic-arima" class="level2" data-number="11.5">
-<h2 data-number="11.5" class="anchored" data-anchor-id="automatic-arima"><span class="header-section-number">11.5</span> Automatic ARIMA</h2>
+<section id="automatic-arima" class="level2" data-number="11.4">
+<h2 data-number="11.4" class="anchored" data-anchor-id="automatic-arima"><span class="header-section-number">11.4</span> Automatic ARIMA</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -9396,8 +9392,8 @@ Figure 38: auto.arima() forecast using an exhaustive (non-stepwise, exact likel
 <p><code>auto.arima()</code> with <code>stepwise = FALSE</code> and <code>approximation = FALSE</code> performs an exhaustive search over ARIMA order combinations using exact likelihood. Comparing its selected order against the manually specified ARIMA(0,1,1) validates the model specification process: if <code>auto.arima()</code> selects the same model, the manual analysis is confirmed. If it selects a different specification, the discrepancy warrants investigation — either the manual specification missed structure, or <code>auto.arima()</code> over-fits to the training sample.</p>
 <hr>
 </section>
-<section id="tbats" class="level2" data-number="11.6">
-<h2 data-number="11.6" class="anchored" data-anchor-id="tbats"><span class="header-section-number">11.6</span> TBATS</h2>
+<section id="tbats" class="level2" data-number="11.5">
+<h2 data-number="11.5" class="anchored" data-anchor-id="tbats"><span class="header-section-number">11.5</span> TBATS</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -9429,8 +9425,8 @@ Figure 39: TBATS forecast — handles complex seasonal patterns including multi
 <p>TBATS (Trigonometric, Box-Cox, ARMA errors, Trend, Seasonal) decomposes the series into trend, seasonal, and error components, handling multiple seasonal periods and non-integer frequencies. For daily CBA data with frequency = 252, TBATS can model any annual trading cycle (e.g., year-end institutional rebalancing) that ARIMA treats as noise. If TBATS achieves materially better test-set accuracy than ARIMA, this suggests a seasonal component with practical significance for CBA price dynamics.</p>
 <hr>
 </section>
-<section id="forecast-comparison" class="level2" data-number="11.7">
-<h2 data-number="11.7" class="anchored" data-anchor-id="forecast-comparison"><span class="header-section-number">11.7</span> Forecast Comparison</h2>
+<section id="forecast-comparison" class="level2" data-number="11.6">
+<h2 data-number="11.6" class="anchored" data-anchor-id="forecast-comparison"><span class="header-section-number">11.6</span> Forecast Comparison</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -9463,8 +9459,8 @@ Figure 40: All forecasting methods overlaid for direct visual comparison. The r
 <p><a href="#fig-fc-comparison" class="quarto-xref">Figure 40</a> provides the definitive visual comparison of all methods against the actual test-set prices. Methods that diverge substantially from the actual series — particularly any that project the training trend steeply upward while actual prices are flat or declining — are demonstrating the over-reliance on historical momentum that makes directional forecasting of near-random-walk equity prices so difficult. Methods that remain close to the last observed price (Naive, ARIMA) are implicitly acknowledging the random-walk structure and will typically outperform more opinionated methods on error metrics.</p>
 <hr>
 </section>
-<section id="accuracy-comparison" class="level2" data-number="11.8">
-<h2 data-number="11.8" class="anchored" data-anchor-id="accuracy-comparison"><span class="header-section-number">11.8</span> Accuracy Comparison</h2>
+<section id="accuracy-comparison" class="level2" data-number="11.7">
+<h2 data-number="11.7" class="anchored" data-anchor-id="accuracy-comparison"><span class="header-section-number">11.7</span> Accuracy Comparison</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -12377,210 +12373,208 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb145-1477"><a href="#cb145-1477" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
 <span id="cb145-1478"><a href="#cb145-1478" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb145-1479"><a href="#cb145-1479" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1480"><a href="#cb145-1480" aria-hidden="true" tabindex="-1"></a><span class="fu">## </span></span>
+<span id="cb145-1480"><a href="#cb145-1480" aria-hidden="true" tabindex="-1"></a><span class="fu">## ARIMA Forecast (Selected Model)</span></span>
 <span id="cb145-1481"><a href="#cb145-1481" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1482"><a href="#cb145-1482" aria-hidden="true" tabindex="-1"></a><span class="fu">## ARIMA Forecast (Selected Model)</span></span>
-<span id="cb145-1483"><a href="#cb145-1483" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1484"><a href="#cb145-1484" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-arima}</span></span>
-<span id="cb145-1485"><a href="#cb145-1485" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-arima</span></span>
-<span id="cb145-1486"><a href="#cb145-1486" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Selected ARIMA(0,1,1) 90-day forecast. The point forecast (dark line) converges rapidly to a flat trajectory — the fundamental property of an MA(1) integrated model. Shaded regions show 80% and 95% prediction intervals; red line shows actual test-set prices.&quot;</span></span>
-<span id="cb145-1487"><a href="#cb145-1487" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
-<span id="cb145-1488"><a href="#cb145-1488" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1489"><a href="#cb145-1489" aria-hidden="true" tabindex="-1"></a><span class="in"># fc_arima already defined above as: forecast(best_model, h = h)</span></span>
-<span id="cb145-1490"><a href="#cb145-1490" aria-hidden="true" tabindex="-1"></a><span class="in"># No lambda needed — model was fit on raw prices</span></span>
-<span id="cb145-1491"><a href="#cb145-1491" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_arima, y_train, y_test, best_model_name)</span></span>
+<span id="cb145-1482"><a href="#cb145-1482" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-arima}</span></span>
+<span id="cb145-1483"><a href="#cb145-1483" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-arima</span></span>
+<span id="cb145-1484"><a href="#cb145-1484" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Selected ARIMA(0,1,1) 90-day forecast. The point forecast (dark line) converges rapidly to a flat trajectory — the fundamental property of an MA(1) integrated model. Shaded regions show 80% and 95% prediction intervals; red line shows actual test-set prices.&quot;</span></span>
+<span id="cb145-1485"><a href="#cb145-1485" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
+<span id="cb145-1486"><a href="#cb145-1486" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1487"><a href="#cb145-1487" aria-hidden="true" tabindex="-1"></a><span class="in"># fc_arima already defined above as: forecast(best_model, h = h)</span></span>
+<span id="cb145-1488"><a href="#cb145-1488" aria-hidden="true" tabindex="-1"></a><span class="in"># No lambda needed — model was fit on raw prices</span></span>
+<span id="cb145-1489"><a href="#cb145-1489" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_arima, y_train, y_test, best_model_name)</span></span>
+<span id="cb145-1490"><a href="#cb145-1490" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1491"><a href="#cb145-1491" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb145-1492"><a href="#cb145-1492" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1493"><a href="#cb145-1493" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1493"><a href="#cb145-1493" aria-hidden="true" tabindex="-1"></a>**Convergence to flat trajectory** (@fig-fc-arima). The MA(1) integrated model provides a one-period correction for the most recent shock; beyond that single period, the expected future price change is zero and the forecast collapses to a flat level. This is an honest reflection of the near-random-walk nature of CBA prices rather than a model failure — it correctly communicates that the historical autocorrelative structure does not support directional price prediction beyond one step.</span>
 <span id="cb145-1494"><a href="#cb145-1494" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1495"><a href="#cb145-1495" aria-hidden="true" tabindex="-1"></a>**Convergence to flat trajectory** (@fig-fc-arima). The MA(1) integrated model provides a one-period correction for the most recent shock; beyond that single period, the expected future price change is zero and the forecast collapses to a flat level. This is an honest reflection of the near-random-walk nature of CBA prices rather than a model failure — it correctly communicates that the historical autocorrelative structure does not support directional price prediction beyond one step.</span>
+<span id="cb145-1495"><a href="#cb145-1495" aria-hidden="true" tabindex="-1"></a>**Widening intervals.** Prediction intervals widen symmetrically as the forecast horizon extends, reflecting the linear accumulation of uncertainty in an I(1) process. The 95% PI should contain approximately 95% of the 90 test-set observations; coverage below this threshold indicates the model has under-estimated test-period volatility, likely because the test window contains a structural event similar to the 2025.5 shock.</span>
 <span id="cb145-1496"><a href="#cb145-1496" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1497"><a href="#cb145-1497" aria-hidden="true" tabindex="-1"></a>**Widening intervals.** Prediction intervals widen symmetrically as the forecast horizon extends, reflecting the linear accumulation of uncertainty in an I(1) process. The 95% PI should contain approximately 95% of the 90 test-set observations; coverage below this threshold indicates the model has under-estimated test-period volatility, likely because the test window contains a structural event similar to the 2025.5 shock.</span>
+<span id="cb145-1497"><a href="#cb145-1497" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb145-1498"><a href="#cb145-1498" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1499"><a href="#cb145-1499" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb145-1499"><a href="#cb145-1499" aria-hidden="true" tabindex="-1"></a><span class="fu">## Benchmark Forecasts</span></span>
 <span id="cb145-1500"><a href="#cb145-1500" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1501"><a href="#cb145-1501" aria-hidden="true" tabindex="-1"></a><span class="fu">## Benchmark Forecasts</span></span>
-<span id="cb145-1502"><a href="#cb145-1502" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1503"><a href="#cb145-1503" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-benchmarks}</span></span>
-<span id="cb145-1504"><a href="#cb145-1504" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-benchmarks</span></span>
-<span id="cb145-1505"><a href="#cb145-1505" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1506"><a href="#cb145-1506" aria-hidden="true" tabindex="-1"></a><span class="in">fc_bench &lt;- benchmark_forecasts(y_train, y_test)</span></span>
-<span id="cb145-1507"><a href="#cb145-1507" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1508"><a href="#cb145-1508" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1509"><a href="#cb145-1509" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-naive}</span></span>
-<span id="cb145-1510"><a href="#cb145-1510" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-naive</span></span>
-<span id="cb145-1511"><a href="#cb145-1511" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Naive forecast: the last observed training price carried forward as a flat line. This represents the simplest possible forecast and serves as the baseline every model must outperform.&quot;</span></span>
-<span id="cb145-1512"><a href="#cb145-1512" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 4</span></span>
-<span id="cb145-1513"><a href="#cb145-1513" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1514"><a href="#cb145-1514" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_bench$Naive, y_train, y_test, &quot;Naive&quot;)</span></span>
-<span id="cb145-1515"><a href="#cb145-1515" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1516"><a href="#cb145-1516" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1517"><a href="#cb145-1517" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-drift}</span></span>
-<span id="cb145-1518"><a href="#cb145-1518" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-drift</span></span>
-<span id="cb145-1519"><a href="#cb145-1519" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Drift forecast: linear extrapolation of the historical average daily change. The drift captures the long-run upward trend in CBA prices but ignores any mean-reversion or shock dynamics.&quot;</span></span>
-<span id="cb145-1520"><a href="#cb145-1520" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 4</span></span>
-<span id="cb145-1521"><a href="#cb145-1521" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1522"><a href="#cb145-1522" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_bench$Drift, y_train, y_test, &quot;Drift&quot;)</span></span>
-<span id="cb145-1523"><a href="#cb145-1523" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1524"><a href="#cb145-1524" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1525"><a href="#cb145-1525" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-mean}</span></span>
-<span id="cb145-1526"><a href="#cb145-1526" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-mean</span></span>
-<span id="cb145-1527"><a href="#cb145-1527" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Mean forecast: the historical training average projected as a constant. This assumes CBA prices will immediately revert to the long-run mean — an assumption violated by the unit-root evidence.&quot;</span></span>
-<span id="cb145-1528"><a href="#cb145-1528" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 4</span></span>
-<span id="cb145-1529"><a href="#cb145-1529" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1530"><a href="#cb145-1530" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_bench$Mean, y_train, y_test, &quot;Mean&quot;)</span></span>
-<span id="cb145-1531"><a href="#cb145-1531" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1501"><a href="#cb145-1501" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-benchmarks}</span></span>
+<span id="cb145-1502"><a href="#cb145-1502" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-benchmarks</span></span>
+<span id="cb145-1503"><a href="#cb145-1503" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1504"><a href="#cb145-1504" aria-hidden="true" tabindex="-1"></a><span class="in">fc_bench &lt;- benchmark_forecasts(y_train, y_test)</span></span>
+<span id="cb145-1505"><a href="#cb145-1505" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1506"><a href="#cb145-1506" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1507"><a href="#cb145-1507" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-naive}</span></span>
+<span id="cb145-1508"><a href="#cb145-1508" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-naive</span></span>
+<span id="cb145-1509"><a href="#cb145-1509" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Naive forecast: the last observed training price carried forward as a flat line. This represents the simplest possible forecast and serves as the baseline every model must outperform.&quot;</span></span>
+<span id="cb145-1510"><a href="#cb145-1510" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 4</span></span>
+<span id="cb145-1511"><a href="#cb145-1511" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1512"><a href="#cb145-1512" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_bench$Naive, y_train, y_test, &quot;Naive&quot;)</span></span>
+<span id="cb145-1513"><a href="#cb145-1513" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1514"><a href="#cb145-1514" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1515"><a href="#cb145-1515" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-drift}</span></span>
+<span id="cb145-1516"><a href="#cb145-1516" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-drift</span></span>
+<span id="cb145-1517"><a href="#cb145-1517" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Drift forecast: linear extrapolation of the historical average daily change. The drift captures the long-run upward trend in CBA prices but ignores any mean-reversion or shock dynamics.&quot;</span></span>
+<span id="cb145-1518"><a href="#cb145-1518" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 4</span></span>
+<span id="cb145-1519"><a href="#cb145-1519" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1520"><a href="#cb145-1520" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_bench$Drift, y_train, y_test, &quot;Drift&quot;)</span></span>
+<span id="cb145-1521"><a href="#cb145-1521" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1522"><a href="#cb145-1522" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1523"><a href="#cb145-1523" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-mean}</span></span>
+<span id="cb145-1524"><a href="#cb145-1524" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-mean</span></span>
+<span id="cb145-1525"><a href="#cb145-1525" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;Mean forecast: the historical training average projected as a constant. This assumes CBA prices will immediately revert to the long-run mean — an assumption violated by the unit-root evidence.&quot;</span></span>
+<span id="cb145-1526"><a href="#cb145-1526" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 4</span></span>
+<span id="cb145-1527"><a href="#cb145-1527" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1528"><a href="#cb145-1528" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_bench$Mean, y_train, y_test, &quot;Mean&quot;)</span></span>
+<span id="cb145-1529"><a href="#cb145-1529" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1530"><a href="#cb145-1530" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1531"><a href="#cb145-1531" aria-hidden="true" tabindex="-1"></a>The three benchmark methods — Naive, Drift, and Mean — represent simple but important baselines. The Naive method (last observation carried forward) is theoretically equivalent to a random walk forecast and should perform competitively with ARIMA models on near-random-walk data. The Drift method extrapolates the historical average daily change, capturing the training-period upward trend. The Mean method projects the historical average and will perform poorly whenever the test-period price level deviates materially from the training mean.</span>
 <span id="cb145-1532"><a href="#cb145-1532" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1533"><a href="#cb145-1533" aria-hidden="true" tabindex="-1"></a>The three benchmark methods — Naive, Drift, and Mean — represent simple but important baselines. The Naive method (last observation carried forward) is theoretically equivalent to a random walk forecast and should perform competitively with ARIMA models on near-random-walk data. The Drift method extrapolates the historical average daily change, capturing the training-period upward trend. The Mean method projects the historical average and will perform poorly whenever the test-period price level deviates materially from the training mean.</span>
+<span id="cb145-1533"><a href="#cb145-1533" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb145-1534"><a href="#cb145-1534" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1535"><a href="#cb145-1535" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb145-1535"><a href="#cb145-1535" aria-hidden="true" tabindex="-1"></a><span class="fu">## Exponential Smoothing (ETS)</span></span>
 <span id="cb145-1536"><a href="#cb145-1536" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1537"><a href="#cb145-1537" aria-hidden="true" tabindex="-1"></a><span class="fu">## Exponential Smoothing (ETS)</span></span>
-<span id="cb145-1538"><a href="#cb145-1538" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1539"><a href="#cb145-1539" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-ets}</span></span>
-<span id="cb145-1540"><a href="#cb145-1540" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-ets</span></span>
-<span id="cb145-1541"><a href="#cb145-1541" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1542"><a href="#cb145-1542" aria-hidden="true" tabindex="-1"></a><span class="in">fc_ets_result &lt;- ets_forecast(y_train, h = h)</span></span>
-<span id="cb145-1543"><a href="#cb145-1543" aria-hidden="true" tabindex="-1"></a><span class="in">cat(&quot;ETS model selected:&quot;, fc_ets_result$model$method, &quot;\n&quot;)</span></span>
-<span id="cb145-1544"><a href="#cb145-1544" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1545"><a href="#cb145-1545" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1546"><a href="#cb145-1546" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-ets}</span></span>
-<span id="cb145-1547"><a href="#cb145-1547" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-ets</span></span>
-<span id="cb145-1548"><a href="#cb145-1548" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;ETS forecast with automatically selected error, trend, and seasonal components. ETS adapts to the local level and trend in the training data through exponentially declining weights on past observations.&quot;</span></span>
-<span id="cb145-1549"><a href="#cb145-1549" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
-<span id="cb145-1550"><a href="#cb145-1550" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1551"><a href="#cb145-1551" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_ets_result$forecast, y_train, y_test, </span></span>
-<span id="cb145-1552"><a href="#cb145-1552" aria-hidden="true" tabindex="-1"></a><span class="in">                     model_name = paste(&quot;ETS(&quot;, fc_ets_result$model$method, &quot;)&quot;))</span></span>
-<span id="cb145-1553"><a href="#cb145-1553" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1537"><a href="#cb145-1537" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-ets}</span></span>
+<span id="cb145-1538"><a href="#cb145-1538" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-ets</span></span>
+<span id="cb145-1539"><a href="#cb145-1539" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1540"><a href="#cb145-1540" aria-hidden="true" tabindex="-1"></a><span class="in">fc_ets_result &lt;- ets_forecast(y_train, h = h)</span></span>
+<span id="cb145-1541"><a href="#cb145-1541" aria-hidden="true" tabindex="-1"></a><span class="in">cat(&quot;ETS model selected:&quot;, fc_ets_result$model$method, &quot;\n&quot;)</span></span>
+<span id="cb145-1542"><a href="#cb145-1542" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1543"><a href="#cb145-1543" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1544"><a href="#cb145-1544" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-ets}</span></span>
+<span id="cb145-1545"><a href="#cb145-1545" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-ets</span></span>
+<span id="cb145-1546"><a href="#cb145-1546" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;ETS forecast with automatically selected error, trend, and seasonal components. ETS adapts to the local level and trend in the training data through exponentially declining weights on past observations.&quot;</span></span>
+<span id="cb145-1547"><a href="#cb145-1547" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
+<span id="cb145-1548"><a href="#cb145-1548" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1549"><a href="#cb145-1549" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_ets_result$forecast, y_train, y_test, </span></span>
+<span id="cb145-1550"><a href="#cb145-1550" aria-hidden="true" tabindex="-1"></a><span class="in">                     model_name = paste(&quot;ETS(&quot;, fc_ets_result$model$method, &quot;)&quot;))</span></span>
+<span id="cb145-1551"><a href="#cb145-1551" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1552"><a href="#cb145-1552" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1553"><a href="#cb145-1553" aria-hidden="true" tabindex="-1"></a>Exponential Smoothing State Space (ETS) models assign exponentially declining weights to past observations, with the rate of decay governed by smoothing parameters. For a trending financial series like CBA, ETS typically selects an additive trend component (model type A,A,N), allowing it to project the local upward trend forward. The <span class="in">`ets()`</span> function&#39;s automatic selection process chooses the component structure that minimises the training-set information criterion, providing a data-driven alternative to the manual ARIMA specification.</span>
 <span id="cb145-1554"><a href="#cb145-1554" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1555"><a href="#cb145-1555" aria-hidden="true" tabindex="-1"></a>Exponential Smoothing State Space (ETS) models assign exponentially declining weights to past observations, with the rate of decay governed by smoothing parameters. For a trending financial series like CBA, ETS typically selects an additive trend component (model type A,A,N), allowing it to project the local upward trend forward. The <span class="in">`ets()`</span> function&#39;s automatic selection process chooses the component structure that minimises the training-set information criterion, providing a data-driven alternative to the manual ARIMA specification.</span>
+<span id="cb145-1555"><a href="#cb145-1555" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb145-1556"><a href="#cb145-1556" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1557"><a href="#cb145-1557" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb145-1557"><a href="#cb145-1557" aria-hidden="true" tabindex="-1"></a><span class="fu">## Automatic ARIMA</span></span>
 <span id="cb145-1558"><a href="#cb145-1558" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1559"><a href="#cb145-1559" aria-hidden="true" tabindex="-1"></a><span class="fu">## Automatic ARIMA</span></span>
-<span id="cb145-1560"><a href="#cb145-1560" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1561"><a href="#cb145-1561" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-autoarima}</span></span>
-<span id="cb145-1562"><a href="#cb145-1562" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-autoarima</span></span>
-<span id="cb145-1563"><a href="#cb145-1563" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1564"><a href="#cb145-1564" aria-hidden="true" tabindex="-1"></a><span class="in">fc_auto_result &lt;- auto_arima_forecast(y_train, h = h)</span></span>
-<span id="cb145-1565"><a href="#cb145-1565" aria-hidden="true" tabindex="-1"></a><span class="in">cat(&quot;auto.arima selected:&quot;, as.character(fc_auto_result$model), &quot;\n&quot;)</span></span>
-<span id="cb145-1566"><a href="#cb145-1566" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1567"><a href="#cb145-1567" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1568"><a href="#cb145-1568" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-autoarima}</span></span>
-<span id="cb145-1569"><a href="#cb145-1569" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-autoarima</span></span>
-<span id="cb145-1570"><a href="#cb145-1570" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;auto.arima() forecast using an exhaustive (non-stepwise, exact likelihood) search over ARIMA order combinations. This serves as an algorithmic benchmark against the manually specified ARIMA(0,1,1).&quot;</span></span>
-<span id="cb145-1571"><a href="#cb145-1571" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
-<span id="cb145-1572"><a href="#cb145-1572" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1573"><a href="#cb145-1573" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_auto_result$forecast, y_train, y_test,</span></span>
-<span id="cb145-1574"><a href="#cb145-1574" aria-hidden="true" tabindex="-1"></a><span class="in">                     model_name = paste(&quot;auto.arima:&quot;, </span></span>
-<span id="cb145-1575"><a href="#cb145-1575" aria-hidden="true" tabindex="-1"></a><span class="in">                                        as.character(fc_auto_result$model)))</span></span>
-<span id="cb145-1576"><a href="#cb145-1576" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1559"><a href="#cb145-1559" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-autoarima}</span></span>
+<span id="cb145-1560"><a href="#cb145-1560" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-autoarima</span></span>
+<span id="cb145-1561"><a href="#cb145-1561" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1562"><a href="#cb145-1562" aria-hidden="true" tabindex="-1"></a><span class="in">fc_auto_result &lt;- auto_arima_forecast(y_train, h = h)</span></span>
+<span id="cb145-1563"><a href="#cb145-1563" aria-hidden="true" tabindex="-1"></a><span class="in">cat(&quot;auto.arima selected:&quot;, as.character(fc_auto_result$model), &quot;\n&quot;)</span></span>
+<span id="cb145-1564"><a href="#cb145-1564" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1565"><a href="#cb145-1565" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1566"><a href="#cb145-1566" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-autoarima}</span></span>
+<span id="cb145-1567"><a href="#cb145-1567" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-autoarima</span></span>
+<span id="cb145-1568"><a href="#cb145-1568" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;auto.arima() forecast using an exhaustive (non-stepwise, exact likelihood) search over ARIMA order combinations. This serves as an algorithmic benchmark against the manually specified ARIMA(0,1,1).&quot;</span></span>
+<span id="cb145-1569"><a href="#cb145-1569" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
+<span id="cb145-1570"><a href="#cb145-1570" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1571"><a href="#cb145-1571" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_auto_result$forecast, y_train, y_test,</span></span>
+<span id="cb145-1572"><a href="#cb145-1572" aria-hidden="true" tabindex="-1"></a><span class="in">                     model_name = paste(&quot;auto.arima:&quot;, </span></span>
+<span id="cb145-1573"><a href="#cb145-1573" aria-hidden="true" tabindex="-1"></a><span class="in">                                        as.character(fc_auto_result$model)))</span></span>
+<span id="cb145-1574"><a href="#cb145-1574" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1575"><a href="#cb145-1575" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1576"><a href="#cb145-1576" aria-hidden="true" tabindex="-1"></a><span class="in">`auto.arima()`</span> with <span class="in">`stepwise = FALSE`</span> and <span class="in">`approximation = FALSE`</span> performs an exhaustive search over ARIMA order combinations using exact likelihood. Comparing its selected order against the manually specified ARIMA(0,1,1) validates the model specification process: if <span class="in">`auto.arima()`</span> selects the same model, the manual analysis is confirmed. If it selects a different specification, the discrepancy warrants investigation — either the manual specification missed structure, or <span class="in">`auto.arima()`</span> over-fits to the training sample.</span>
 <span id="cb145-1577"><a href="#cb145-1577" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1578"><a href="#cb145-1578" aria-hidden="true" tabindex="-1"></a><span class="in">`auto.arima()`</span> with <span class="in">`stepwise = FALSE`</span> and <span class="in">`approximation = FALSE`</span> performs an exhaustive search over ARIMA order combinations using exact likelihood. Comparing its selected order against the manually specified ARIMA(0,1,1) validates the model specification process: if <span class="in">`auto.arima()`</span> selects the same model, the manual analysis is confirmed. If it selects a different specification, the discrepancy warrants investigation — either the manual specification missed structure, or <span class="in">`auto.arima()`</span> over-fits to the training sample.</span>
+<span id="cb145-1578"><a href="#cb145-1578" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb145-1579"><a href="#cb145-1579" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1580"><a href="#cb145-1580" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb145-1580"><a href="#cb145-1580" aria-hidden="true" tabindex="-1"></a><span class="fu">## TBATS</span></span>
 <span id="cb145-1581"><a href="#cb145-1581" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1582"><a href="#cb145-1582" aria-hidden="true" tabindex="-1"></a><span class="fu">## TBATS</span></span>
-<span id="cb145-1583"><a href="#cb145-1583" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1584"><a href="#cb145-1584" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-tbats}</span></span>
-<span id="cb145-1585"><a href="#cb145-1585" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-tbats</span></span>
-<span id="cb145-1586"><a href="#cb145-1586" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1587"><a href="#cb145-1587" aria-hidden="true" tabindex="-1"></a><span class="in">fc_tbats_result &lt;- tbats_forecast(y_train, h = h)</span></span>
-<span id="cb145-1588"><a href="#cb145-1588" aria-hidden="true" tabindex="-1"></a><span class="in">cat(&quot;TBATS model fitted successfully.\n&quot;)</span></span>
-<span id="cb145-1589"><a href="#cb145-1589" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1590"><a href="#cb145-1590" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1591"><a href="#cb145-1591" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-tbats}</span></span>
-<span id="cb145-1592"><a href="#cb145-1592" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-tbats</span></span>
-<span id="cb145-1593"><a href="#cb145-1593" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;TBATS forecast — handles complex seasonal patterns including multiple seasonal periods. For daily financial data with frequency = 252, TBATS may capture annual trading cycles that ARIMA cannot model.&quot;</span></span>
-<span id="cb145-1594"><a href="#cb145-1594" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
-<span id="cb145-1595"><a href="#cb145-1595" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1596"><a href="#cb145-1596" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_tbats_result$forecast, y_train, y_test, &quot;TBATS&quot;)</span></span>
-<span id="cb145-1597"><a href="#cb145-1597" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1582"><a href="#cb145-1582" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fc-tbats}</span></span>
+<span id="cb145-1583"><a href="#cb145-1583" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fc-tbats</span></span>
+<span id="cb145-1584"><a href="#cb145-1584" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1585"><a href="#cb145-1585" aria-hidden="true" tabindex="-1"></a><span class="in">fc_tbats_result &lt;- tbats_forecast(y_train, h = h)</span></span>
+<span id="cb145-1586"><a href="#cb145-1586" aria-hidden="true" tabindex="-1"></a><span class="in">cat(&quot;TBATS model fitted successfully.\n&quot;)</span></span>
+<span id="cb145-1587"><a href="#cb145-1587" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1588"><a href="#cb145-1588" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1589"><a href="#cb145-1589" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-tbats}</span></span>
+<span id="cb145-1590"><a href="#cb145-1590" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-tbats</span></span>
+<span id="cb145-1591"><a href="#cb145-1591" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;TBATS forecast — handles complex seasonal patterns including multiple seasonal periods. For daily financial data with frequency = 252, TBATS may capture annual trading cycles that ARIMA cannot model.&quot;</span></span>
+<span id="cb145-1592"><a href="#cb145-1592" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 5</span></span>
+<span id="cb145-1593"><a href="#cb145-1593" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1594"><a href="#cb145-1594" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_simple(fc_tbats_result$forecast, y_train, y_test, &quot;TBATS&quot;)</span></span>
+<span id="cb145-1595"><a href="#cb145-1595" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1596"><a href="#cb145-1596" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1597"><a href="#cb145-1597" aria-hidden="true" tabindex="-1"></a>TBATS (Trigonometric, Box-Cox, ARMA errors, Trend, Seasonal) decomposes the series into trend, seasonal, and error components, handling multiple seasonal periods and non-integer frequencies. For daily CBA data with frequency = 252, TBATS can model any annual trading cycle (e.g., year-end institutional rebalancing) that ARIMA treats as noise. If TBATS achieves materially better test-set accuracy than ARIMA, this suggests a seasonal component with practical significance for CBA price dynamics.</span>
 <span id="cb145-1598"><a href="#cb145-1598" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1599"><a href="#cb145-1599" aria-hidden="true" tabindex="-1"></a>TBATS (Trigonometric, Box-Cox, ARMA errors, Trend, Seasonal) decomposes the series into trend, seasonal, and error components, handling multiple seasonal periods and non-integer frequencies. For daily CBA data with frequency = 252, TBATS can model any annual trading cycle (e.g., year-end institutional rebalancing) that ARIMA treats as noise. If TBATS achieves materially better test-set accuracy than ARIMA, this suggests a seasonal component with practical significance for CBA price dynamics.</span>
+<span id="cb145-1599"><a href="#cb145-1599" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb145-1600"><a href="#cb145-1600" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1601"><a href="#cb145-1601" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb145-1601"><a href="#cb145-1601" aria-hidden="true" tabindex="-1"></a><span class="fu">## Forecast Comparison</span></span>
 <span id="cb145-1602"><a href="#cb145-1602" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1603"><a href="#cb145-1603" aria-hidden="true" tabindex="-1"></a><span class="fu">## Forecast Comparison</span></span>
-<span id="cb145-1604"><a href="#cb145-1604" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1605"><a href="#cb145-1605" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-comparison}</span></span>
-<span id="cb145-1606"><a href="#cb145-1606" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-comparison</span></span>
-<span id="cb145-1607"><a href="#cb145-1607" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;All forecasting methods overlaid for direct visual comparison. The red dashed line shows actual test-set prices. Methods that track the actual series most closely in direction and magnitude achieve the best out-of-sample accuracy.&quot;</span></span>
-<span id="cb145-1608"><a href="#cb145-1608" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 6</span></span>
-<span id="cb145-1609"><a href="#cb145-1609" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1610"><a href="#cb145-1610" aria-hidden="true" tabindex="-1"></a><span class="in">all_forecasts &lt;- list(</span></span>
-<span id="cb145-1611"><a href="#cb145-1611" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;ARIMA(0,1,1)&quot; = fc_arima,</span></span>
-<span id="cb145-1612"><a href="#cb145-1612" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;Naive&quot;        = fc_bench$Naive,</span></span>
-<span id="cb145-1613"><a href="#cb145-1613" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;Drift&quot;        = fc_bench$Drift,</span></span>
-<span id="cb145-1614"><a href="#cb145-1614" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;Mean&quot;         = fc_bench$Mean,</span></span>
-<span id="cb145-1615"><a href="#cb145-1615" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;ETS&quot;          = fc_ets_result$forecast,</span></span>
-<span id="cb145-1616"><a href="#cb145-1616" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;auto.arima&quot;   = fc_auto_result$forecast,</span></span>
-<span id="cb145-1617"><a href="#cb145-1617" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;TBATS&quot;        = fc_tbats_result$forecast</span></span>
-<span id="cb145-1618"><a href="#cb145-1618" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
-<span id="cb145-1619"><a href="#cb145-1619" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1620"><a href="#cb145-1620" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_comparison(all_forecasts, y_train, y_test,</span></span>
-<span id="cb145-1621"><a href="#cb145-1621" aria-hidden="true" tabindex="-1"></a><span class="in">                         title = &quot;CBA.AX — All Forecast Methods vs Actual (90-Day Test Set)&quot;)</span></span>
-<span id="cb145-1622"><a href="#cb145-1622" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1603"><a href="#cb145-1603" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-fc-comparison}</span></span>
+<span id="cb145-1604"><a href="#cb145-1604" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: fig-fc-comparison</span></span>
+<span id="cb145-1605"><a href="#cb145-1605" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-cap: &quot;All forecasting methods overlaid for direct visual comparison. The red dashed line shows actual test-set prices. Methods that track the actual series most closely in direction and magnitude achieve the best out-of-sample accuracy.&quot;</span></span>
+<span id="cb145-1606"><a href="#cb145-1606" aria-hidden="true" tabindex="-1"></a><span class="in">#| fig-height: 6</span></span>
+<span id="cb145-1607"><a href="#cb145-1607" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1608"><a href="#cb145-1608" aria-hidden="true" tabindex="-1"></a><span class="in">all_forecasts &lt;- list(</span></span>
+<span id="cb145-1609"><a href="#cb145-1609" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;ARIMA(0,1,1)&quot; = fc_arima,</span></span>
+<span id="cb145-1610"><a href="#cb145-1610" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;Naive&quot;        = fc_bench$Naive,</span></span>
+<span id="cb145-1611"><a href="#cb145-1611" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;Drift&quot;        = fc_bench$Drift,</span></span>
+<span id="cb145-1612"><a href="#cb145-1612" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;Mean&quot;         = fc_bench$Mean,</span></span>
+<span id="cb145-1613"><a href="#cb145-1613" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;ETS&quot;          = fc_ets_result$forecast,</span></span>
+<span id="cb145-1614"><a href="#cb145-1614" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;auto.arima&quot;   = fc_auto_result$forecast,</span></span>
+<span id="cb145-1615"><a href="#cb145-1615" aria-hidden="true" tabindex="-1"></a><span class="in">  &quot;TBATS&quot;        = fc_tbats_result$forecast</span></span>
+<span id="cb145-1616"><a href="#cb145-1616" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
+<span id="cb145-1617"><a href="#cb145-1617" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1618"><a href="#cb145-1618" aria-hidden="true" tabindex="-1"></a><span class="in">plot_forecast_comparison(all_forecasts, y_train, y_test,</span></span>
+<span id="cb145-1619"><a href="#cb145-1619" aria-hidden="true" tabindex="-1"></a><span class="in">                         title = &quot;CBA.AX — All Forecast Methods vs Actual (90-Day Test Set)&quot;)</span></span>
+<span id="cb145-1620"><a href="#cb145-1620" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1621"><a href="#cb145-1621" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1622"><a href="#cb145-1622" aria-hidden="true" tabindex="-1"></a>@fig-fc-comparison provides the definitive visual comparison of all methods against the actual test-set prices. Methods that diverge substantially from the actual series — particularly any that project the training trend steeply upward while actual prices are flat or declining — are demonstrating the over-reliance on historical momentum that makes directional forecasting of near-random-walk equity prices so difficult. Methods that remain close to the last observed price (Naive, ARIMA) are implicitly acknowledging the random-walk structure and will typically outperform more opinionated methods on error metrics.</span>
 <span id="cb145-1623"><a href="#cb145-1623" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1624"><a href="#cb145-1624" aria-hidden="true" tabindex="-1"></a>@fig-fc-comparison provides the definitive visual comparison of all methods against the actual test-set prices. Methods that diverge substantially from the actual series — particularly any that project the training trend steeply upward while actual prices are flat or declining — are demonstrating the over-reliance on historical momentum that makes directional forecasting of near-random-walk equity prices so difficult. Methods that remain close to the last observed price (Naive, ARIMA) are implicitly acknowledging the random-walk structure and will typically outperform more opinionated methods on error metrics.</span>
+<span id="cb145-1624"><a href="#cb145-1624" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
 <span id="cb145-1625"><a href="#cb145-1625" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1626"><a href="#cb145-1626" aria-hidden="true" tabindex="-1"></a>------------------------------------------------------------------------</span>
+<span id="cb145-1626"><a href="#cb145-1626" aria-hidden="true" tabindex="-1"></a><span class="fu">## Accuracy Comparison</span></span>
 <span id="cb145-1627"><a href="#cb145-1627" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1628"><a href="#cb145-1628" aria-hidden="true" tabindex="-1"></a><span class="fu">## Accuracy Comparison</span></span>
-<span id="cb145-1629"><a href="#cb145-1629" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1630"><a href="#cb145-1630" aria-hidden="true" tabindex="-1"></a><span class="in">```{r stat-forecast-accuracy}</span></span>
-<span id="cb145-1631"><a href="#cb145-1631" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: stat-forecast-accuracy</span></span>
-<span id="cb145-1632"><a href="#cb145-1632" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1633"><a href="#cb145-1633" aria-hidden="true" tabindex="-1"></a><span class="in">compare_forecasts(all_forecasts, y_test,</span></span>
-<span id="cb145-1634"><a href="#cb145-1634" aria-hidden="true" tabindex="-1"></a><span class="in">  caption = &quot;Out-of-sample forecast accuracy — all methods ranked by RMSE (90-day test set).&quot;)</span></span>
-<span id="cb145-1635"><a href="#cb145-1635" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb145-1636"><a href="#cb145-1636" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1637"><a href="#cb145-1637" aria-hidden="true" tabindex="-1"></a><span class="in">```{r stat-forecast-table-arima}</span></span>
-<span id="cb145-1638"><a href="#cb145-1638" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: stat-forecast-table-arima</span></span>
-<span id="cb145-1639"><a href="#cb145-1639" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1640"><a href="#cb145-1640" aria-hidden="true" tabindex="-1"></a><span class="in">fc_df &lt;- data.frame(</span></span>
-<span id="cb145-1641"><a href="#cb145-1641" aria-hidden="true" tabindex="-1"></a><span class="in">  Day      = seq_along(fc_arima$mean),</span></span>
-<span id="cb145-1642"><a href="#cb145-1642" aria-hidden="true" tabindex="-1"></a><span class="in">  Forecast = round(as.numeric(fc_arima$mean),           2),</span></span>
-<span id="cb145-1643"><a href="#cb145-1643" aria-hidden="true" tabindex="-1"></a><span class="in">  Lo_80    = round(as.numeric(fc_arima$lower[, &quot;80%&quot;]), 2),</span></span>
-<span id="cb145-1644"><a href="#cb145-1644" aria-hidden="true" tabindex="-1"></a><span class="in">  Hi_80    = round(as.numeric(fc_arima$upper[, &quot;80%&quot;]), 2),</span></span>
-<span id="cb145-1645"><a href="#cb145-1645" aria-hidden="true" tabindex="-1"></a><span class="in">  Lo_95    = round(as.numeric(fc_arima$lower[, &quot;95%&quot;]), 2),</span></span>
-<span id="cb145-1646"><a href="#cb145-1646" aria-hidden="true" tabindex="-1"></a><span class="in">  Hi_95    = round(as.numeric(fc_arima$upper[, &quot;95%&quot;]), 2),</span></span>
-<span id="cb145-1647"><a href="#cb145-1647" aria-hidden="true" tabindex="-1"></a><span class="in">  Actual   = round(as.numeric(y_test),                  2)</span></span>
-<span id="cb145-1648"><a href="#cb145-1648" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
-<span id="cb145-1649"><a href="#cb145-1649" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1650"><a href="#cb145-1650" aria-hidden="true" tabindex="-1"></a><span class="in">knitr::kable(fc_df,</span></span>
-<span id="cb145-1651"><a href="#cb145-1651" aria-hidden="true" tabindex="-1"></a><span class="in">  caption   = paste0(&quot;90-day forecast vs actual CBA.AX prices — &quot;, best_model_name, &quot;.&quot;),</span></span>
-<span id="cb145-1652"><a href="#cb145-1652" aria-hidden="true" tabindex="-1"></a><span class="in">  align     = &quot;c&quot;,</span></span>
-<span id="cb145-1653"><a href="#cb145-1653" aria-hidden="true" tabindex="-1"></a><span class="in">  col.names = c(&quot;Day&quot;, &quot;Forecast (AUD)&quot;, &quot;Lo 80%&quot;, &quot;Hi 80%&quot;,</span></span>
-<span id="cb145-1654"><a href="#cb145-1654" aria-hidden="true" tabindex="-1"></a><span class="in">                &quot;Lo 95%&quot;, &quot;Hi 95%&quot;, &quot;Actual (AUD)&quot;))</span></span>
-<span id="cb145-1655"><a href="#cb145-1655" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1628"><a href="#cb145-1628" aria-hidden="true" tabindex="-1"></a><span class="in">```{r stat-forecast-accuracy}</span></span>
+<span id="cb145-1629"><a href="#cb145-1629" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: stat-forecast-accuracy</span></span>
+<span id="cb145-1630"><a href="#cb145-1630" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1631"><a href="#cb145-1631" aria-hidden="true" tabindex="-1"></a><span class="in">compare_forecasts(all_forecasts, y_test,</span></span>
+<span id="cb145-1632"><a href="#cb145-1632" aria-hidden="true" tabindex="-1"></a><span class="in">  caption = &quot;Out-of-sample forecast accuracy — all methods ranked by RMSE (90-day test set).&quot;)</span></span>
+<span id="cb145-1633"><a href="#cb145-1633" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1634"><a href="#cb145-1634" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1635"><a href="#cb145-1635" aria-hidden="true" tabindex="-1"></a><span class="in">```{r stat-forecast-table-arima}</span></span>
+<span id="cb145-1636"><a href="#cb145-1636" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: stat-forecast-table-arima</span></span>
+<span id="cb145-1637"><a href="#cb145-1637" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1638"><a href="#cb145-1638" aria-hidden="true" tabindex="-1"></a><span class="in">fc_df &lt;- data.frame(</span></span>
+<span id="cb145-1639"><a href="#cb145-1639" aria-hidden="true" tabindex="-1"></a><span class="in">  Day      = seq_along(fc_arima$mean),</span></span>
+<span id="cb145-1640"><a href="#cb145-1640" aria-hidden="true" tabindex="-1"></a><span class="in">  Forecast = round(as.numeric(fc_arima$mean),           2),</span></span>
+<span id="cb145-1641"><a href="#cb145-1641" aria-hidden="true" tabindex="-1"></a><span class="in">  Lo_80    = round(as.numeric(fc_arima$lower[, &quot;80%&quot;]), 2),</span></span>
+<span id="cb145-1642"><a href="#cb145-1642" aria-hidden="true" tabindex="-1"></a><span class="in">  Hi_80    = round(as.numeric(fc_arima$upper[, &quot;80%&quot;]), 2),</span></span>
+<span id="cb145-1643"><a href="#cb145-1643" aria-hidden="true" tabindex="-1"></a><span class="in">  Lo_95    = round(as.numeric(fc_arima$lower[, &quot;95%&quot;]), 2),</span></span>
+<span id="cb145-1644"><a href="#cb145-1644" aria-hidden="true" tabindex="-1"></a><span class="in">  Hi_95    = round(as.numeric(fc_arima$upper[, &quot;95%&quot;]), 2),</span></span>
+<span id="cb145-1645"><a href="#cb145-1645" aria-hidden="true" tabindex="-1"></a><span class="in">  Actual   = round(as.numeric(y_test),                  2)</span></span>
+<span id="cb145-1646"><a href="#cb145-1646" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
+<span id="cb145-1647"><a href="#cb145-1647" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1648"><a href="#cb145-1648" aria-hidden="true" tabindex="-1"></a><span class="in">knitr::kable(fc_df,</span></span>
+<span id="cb145-1649"><a href="#cb145-1649" aria-hidden="true" tabindex="-1"></a><span class="in">  caption   = paste0(&quot;90-day forecast vs actual CBA.AX prices — &quot;, best_model_name, &quot;.&quot;),</span></span>
+<span id="cb145-1650"><a href="#cb145-1650" aria-hidden="true" tabindex="-1"></a><span class="in">  align     = &quot;c&quot;,</span></span>
+<span id="cb145-1651"><a href="#cb145-1651" aria-hidden="true" tabindex="-1"></a><span class="in">  col.names = c(&quot;Day&quot;, &quot;Forecast (AUD)&quot;, &quot;Lo 80%&quot;, &quot;Hi 80%&quot;,</span></span>
+<span id="cb145-1652"><a href="#cb145-1652" aria-hidden="true" tabindex="-1"></a><span class="in">                &quot;Lo 95%&quot;, &quot;Hi 95%&quot;, &quot;Actual (AUD)&quot;))</span></span>
+<span id="cb145-1653"><a href="#cb145-1653" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb145-1654"><a href="#cb145-1654" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb145-1655"><a href="#cb145-1655" aria-hidden="true" tabindex="-1"></a>The accuracy table ranks all nine methods by out-of-sample RMSE against the 90-day test set. For a near-random-walk series, the **Naive forecast is the natural benchmark** — any method that fails to outperform the Naive on RMSE has not extracted any useful predictive signal from the historical data beyond the last observation. The ARIMA(0,1,1) is expected to perform similarly to the Naive (both essentially project the last price forward); material outperformance by ETS, NNETAR, or the Ensemble would indicate exploitable structure beyond the random walk that warrants further investigation.</span>
 <span id="cb145-1656"><a href="#cb145-1656" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1657"><a href="#cb145-1657" aria-hidden="true" tabindex="-1"></a>The accuracy table ranks all nine methods by out-of-sample RMSE against the 90-day test set. For a near-random-walk series, the **Naive forecast is the natural benchmark** — any method that fails to outperform the Naive on RMSE has not extracted any useful predictive signal from the historical data beyond the last observation. The ARIMA(0,1,1) is expected to perform similarly to the Naive (both essentially project the last price forward); material outperformance by ETS, NNETAR, or the Ensemble would indicate exploitable structure beyond the random walk that warrants further investigation.</span>
+<span id="cb145-1657"><a href="#cb145-1657" aria-hidden="true" tabindex="-1"></a><span class="fu"># Conclusion</span></span>
 <span id="cb145-1658"><a href="#cb145-1658" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1659"><a href="#cb145-1659" aria-hidden="true" tabindex="-1"></a><span class="fu"># Conclusion</span></span>
+<span id="cb145-1659"><a href="#cb145-1659" aria-hidden="true" tabindex="-1"></a>This analysis applied the full Box–Jenkins ARIMA workflow and a comprehensive suite of alternative forecasting methods to the daily adjusted closing price of Commonwealth Bank of Australia (CBA.AX) over a two-year sample.</span>
 <span id="cb145-1660"><a href="#cb145-1660" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1661"><a href="#cb145-1661" aria-hidden="true" tabindex="-1"></a>This analysis applied the full Box–Jenkins ARIMA workflow and a comprehensive suite of alternative forecasting methods to the daily adjusted closing price of Commonwealth Bank of Australia (CBA.AX) over a two-year sample.</span>
+<span id="cb145-1661"><a href="#cb145-1661" aria-hidden="true" tabindex="-1"></a>**Transformation (rejected).** The Box-Cox analysis (@fig-boxcox-profile) supported a log transformation statistically, but the applied transformation produced no material improvement in normality or variance stability relative to the original series (@fig-bc-norm, @fig-bc-compare). In accordance with parsimony, the original price series was retained for modelling.</span>
 <span id="cb145-1662"><a href="#cb145-1662" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1663"><a href="#cb145-1663" aria-hidden="true" tabindex="-1"></a>**Transformation (rejected).** The Box-Cox analysis (@fig-boxcox-profile) supported a log transformation statistically, but the applied transformation produced no material improvement in normality or variance stability relative to the original series (@fig-bc-norm, @fig-bc-compare). In accordance with parsimony, the original price series was retained for modelling.</span>
+<span id="cb145-1663"><a href="#cb145-1663" aria-hidden="true" tabindex="-1"></a>**Integration order (d = 1).** The formal stationarity battery (@sec-stationarity) — ADF, PP, and KPSS — unanimously confirmed a unit root in the raw series and stationarity after one round of differencing. CBA&#39;s price path incorporates each new shock — RBA decisions, global credit events, domestic housing data — permanently into the price level.</span>
 <span id="cb145-1664"><a href="#cb145-1664" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1665"><a href="#cb145-1665" aria-hidden="true" tabindex="-1"></a>**Integration order (d = 1).** The formal stationarity battery (@sec-stationarity) — ADF, PP, and KPSS — unanimously confirmed a unit root in the raw series and stationarity after one round of differencing. CBA&#39;s price path incorporates each new shock — RBA decisions, global credit events, domestic housing data — permanently into the price level.</span>
+<span id="cb145-1665"><a href="#cb145-1665" aria-hidden="true" tabindex="-1"></a>**Model specification.** The ACF/PACF (@fig-diff-acf-pacf), EACF, and dual BIC analysis (@fig-bic-10x10-subsets, @fig-bic-5x5-subsets) generated a candidate set spanning parsimonious low-order models through complex higher-order specifications identified by the 10×10 BIC grid. Higher-order candidates (ARIMA(7,1,0), ARIMA(9,1,7)) were included to formally test whether BIC-identified lag structure reflects genuine signal or in-sample noise absorption.</span>
 <span id="cb145-1666"><a href="#cb145-1666" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1667"><a href="#cb145-1667" aria-hidden="true" tabindex="-1"></a>**Model specification.** The ACF/PACF (@fig-diff-acf-pacf), EACF, and dual BIC analysis (@fig-bic-10x10-subsets, @fig-bic-5x5-subsets) generated a candidate set spanning parsimonious low-order models through complex higher-order specifications identified by the 10×10 BIC grid. Higher-order candidates (ARIMA(7,1,0), ARIMA(9,1,7)) were included to formally test whether BIC-identified lag structure reflects genuine signal or in-sample noise absorption.</span>
+<span id="cb145-1667"><a href="#cb145-1667" aria-hidden="true" tabindex="-1"></a>**Residual adequacy.** The Module 7 diagnostic suite (panels @fig-resid-panel-011 through @fig-resid-panel-917) confirmed that parsimonious low-order specifications pass the Ljung-Box white-noise criterion. Residual non-normality reflects the known fat-tail property of daily equity returns — a limitation of the Gaussian ARIMA framework addressed by GARCH extensions rather than higher ARIMA orders.</span>
 <span id="cb145-1668"><a href="#cb145-1668" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1669"><a href="#cb145-1669" aria-hidden="true" tabindex="-1"></a>**Residual adequacy.** The Module 7 diagnostic suite (panels @fig-resid-panel-011 through @fig-resid-panel-917) confirmed that parsimonious low-order specifications pass the Ljung-Box white-noise criterion. Residual non-normality reflects the known fat-tail property of daily equity returns — a limitation of the Gaussian ARIMA framework addressed by GARCH extensions rather than higher ARIMA orders.</span>
+<span id="cb145-1669"><a href="#cb145-1669" aria-hidden="true" tabindex="-1"></a>**Forecasting.** The multi-method comparison (@fig-fc-comparison) demonstrates the fundamental difficulty of forecasting near-random-walk stock prices. Any method that does not substantially outperform the Naive benchmark on out-of-sample RMSE has not extracted exploitable information from the historical price series — an empirical confirmation of weak-form market efficiency for CBA.AX.</span>
 <span id="cb145-1670"><a href="#cb145-1670" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1671"><a href="#cb145-1671" aria-hidden="true" tabindex="-1"></a>**Forecasting.** The multi-method comparison (@fig-fc-comparison) demonstrates the fundamental difficulty of forecasting near-random-walk stock prices. Any method that does not substantially outperform the Naive benchmark on out-of-sample RMSE has not extracted exploitable information from the historical price series — an empirical confirmation of weak-form market efficiency for CBA.AX.</span>
+<span id="cb145-1671"><a href="#cb145-1671" aria-hidden="true" tabindex="-1"></a>**Limitations and extensions.** CBA daily returns exhibit volatility clustering — visible in @fig-diff-series around the 2025.5 event — that no ARIMA model can capture. A GARCH(1,1) or EGARCH extension would model conditional heteroscedasticity and produce more accurate prediction intervals. Incorporating exogenous variables (ARIMAX) — the RBA cash rate, ASX 200 index, CBA&#39;s net interest margin — would leverage macroeconomic theory to improve point forecast accuracy beyond what univariate price history provides.</span>
 <span id="cb145-1672"><a href="#cb145-1672" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1673"><a href="#cb145-1673" aria-hidden="true" tabindex="-1"></a>**Limitations and extensions.** CBA daily returns exhibit volatility clustering — visible in @fig-diff-series around the 2025.5 event — that no ARIMA model can capture. A GARCH(1,1) or EGARCH extension would model conditional heteroscedasticity and produce more accurate prediction intervals. Incorporating exogenous variables (ARIMAX) — the RBA cash rate, ASX 200 index, CBA&#39;s net interest margin — would leverage macroeconomic theory to improve point forecast accuracy beyond what univariate price history provides.</span>
+<span id="cb145-1673"><a href="#cb145-1673" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
 <span id="cb145-1674"><a href="#cb145-1674" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1675"><a href="#cb145-1675" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
+<span id="cb145-1675"><a href="#cb145-1675" aria-hidden="true" tabindex="-1"></a>Cryer, J.D. &amp; Chan, K.-S. (2008). *Time Series Analysis with R*. Springer.</span>
 <span id="cb145-1676"><a href="#cb145-1676" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1677"><a href="#cb145-1677" aria-hidden="true" tabindex="-1"></a>Cryer, J.D. &amp; Chan, K.-S. (2008). *Time Series Analysis with R*. Springer.</span>
+<span id="cb145-1677"><a href="#cb145-1677" aria-hidden="true" tabindex="-1"></a>Box, G.E.P. &amp; Jenkins, G.M. (1970). *Time Series Analysis: Forecasting and Control*. Holden-Day.</span>
 <span id="cb145-1678"><a href="#cb145-1678" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1679"><a href="#cb145-1679" aria-hidden="true" tabindex="-1"></a>Box, G.E.P. &amp; Jenkins, G.M. (1970). *Time Series Analysis: Forecasting and Control*. Holden-Day.</span>
+<span id="cb145-1679"><a href="#cb145-1679" aria-hidden="true" tabindex="-1"></a>Hyndman, R.J. &amp; Athanasopoulos, G. (2021). *Forecasting: Principles and Practice* (3rd ed.). OTexts.</span>
 <span id="cb145-1680"><a href="#cb145-1680" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1681"><a href="#cb145-1681" aria-hidden="true" tabindex="-1"></a>Hyndman, R.J. &amp; Athanasopoulos, G. (2021). *Forecasting: Principles and Practice* (3rd ed.). OTexts.</span>
-<span id="cb145-1682"><a href="#cb145-1682" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-1683"><a href="#cb145-1683" aria-hidden="true" tabindex="-1"></a>Demirhan, H. (2026). *MATH1318/2204 Module 7 — Model Diagnostics and Forecasting*. RMIT University.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
+<span id="cb145-1681"><a href="#cb145-1681" aria-hidden="true" tabindex="-1"></a>Demirhan, H. (2026). *MATH1318/2204 Module 7 — Model Diagnostics and Forecasting*. RMIT University.</span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

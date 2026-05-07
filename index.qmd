@@ -1477,8 +1477,6 @@ knitr::kable(
 )
 ```
 
-## 
-
 ## ARIMA Forecast (Selected Model)
 
 ```{r fig-fc-arima}
