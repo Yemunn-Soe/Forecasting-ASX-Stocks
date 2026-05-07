@@ -12,7 +12,7 @@ website:
       - href: index.qmd
         text: Analysis
       - href: about.qmd
-        text: About
+        text: So What
     right:
       - icon: linkedin
         href: "https://www.linkedin.com/in/yemunn-soe/"

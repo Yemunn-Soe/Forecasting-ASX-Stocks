@@ -1,5 +1,5 @@
 ---
-title: "About"
+title: "So What?"
 ---
 
 ## About Me
@@ -37,7 +37,7 @@ This site is my attempt to:
 
 ## Let’s Connect
 
-- [LinkedIn](https://www.linkedin.com/in/yemunn-soe/)
+- [My LinkedIn](https://www.linkedin.com/in/yemunn-soe/)
 - [GitHub repository for this project](https://github.com/Yemunn-Soe/Forecasting-ASX-Stocks)
 
 Thanks for visiting!

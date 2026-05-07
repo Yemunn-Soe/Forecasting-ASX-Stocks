@@ -942,7 +942,7 @@ stat_bc$table
 
 The statistical evidence is consistent: the Box-Cox transformation fails to produce any substantive improvement in normality, variance stability, or stationarity. The W statistic is marginally lower after transformation, and the stationarity test outcomes are unchanged. In accordance with the principle of parsimony (Cryer & Chan, 2008), we reject the transformation to avoid complicating the model without gaining any mathematical benefit.
 
-**The analysis will proceed on the original adjusted price series.** The modelling phase will focus exclusively on applying first-order differencing (d = 1) to address the non-stationarity of the mean.
+**The analysis will proceed on the original adjusted price series.** The next phase will focus on applying first-order differencing (d = 1) to address the non-stationarity of the mean.
 
 # Addressing Non-Stationarity {#sec-stationarity}
 
@@ -1008,6 +1008,16 @@ stat_d1$table
 
 **PACF for AR order (p) identification.** Similarly, the significant PACF spikes at lag 5 (and lag 8) suggest a potential AR influence at those intervals. Once the lag-5 AR effect is conditioned out, no lower-order AR terms appear significant. An ARIMA(5,1,0) would be implied by this reading, though parsimony considerations and the BIC analysis may favour simpler alternatives.
 
+## Decision: Proceed With First Difference Original Series
+
+Based on the evidence above, we will proceed with the **original series (non-transformed) at** d=1. In time-series modeling, we adhere to the **Principle of Parsimony**. Further differencing (e.g., d=2) is rejected for the following reasons:
+
+-   **Risk of Over-differencing:** Since d=1 has already achieved a stable mean and statistically significant stationarity across ADF, PP, and KPSS tests, any further differencing would unnecessarily increase the variance of the residuals and introduce artificial dependencies (moving average artifacts) into the model.
+
+-   **Loss of Information:** Each level of differencing removes information. d=1 effectively transforms "Price" into "Daily Change" (Returns). A second difference (d=2) would model the "change in the change" (Acceleration), which is often too noisy for financial forecasting and makes the final results significantly harder to interpret in a business context.
+
+-   **Parsimonious Specification:** A stationary d=1 series allows for a simpler ARIMA structure that is less likely to overfit the training data, ensuring better generalization on the 30-day hold-out test set.
+
 # Model Specification
 
 ## Order Identification from ACF and PACF
@@ -1018,11 +1028,23 @@ The standard translation rules for converting ACF and PACF patterns into AR and 
 -   PACF cuts off at lag p, ACF decays geometrically → **AR(p)**
 -   Both decay geometrically → **mixed ARMA(p,q)**
 
-For daily financial returns, it is well-established that series tend to exhibit only weak short-lag autocorrelation after differencing — the majority of the "signal" resides in the trend, which we have now removed. The isolated lag-5 spikes in @fig-diff-acf-pacf are treated as a potential signal but are evaluated against simpler low-order models through information criteria.
+Following the rules established by Cryer & Chan (2008), we examine @fig-diff-acf-pacf for order identification. The ACF and PACF plots for the differenced series exhibit predominantly white-noise behavior in the early lags, with no significant spikes observed from **Lag 1 through Lag 11**.
+
+While isolated spikes are visible at **Lag 12 and Lag 18**, they are interpreted as transient statistical noise rather than persistent structural components. In accordance with the **Principle of Parsimony**, we prioritize a "lean" model specification for the CBA returns and strictly reject higher-order specifications such as **ARIMA(2,1,2)** or **ARIMA(1,1,2)**. Attempting to reach distant signals at Lag 12 or 18 through standard AR or MA orders would result in an over-parameterized model, violating the principle of parsimony and reducing forecast reliability.
+
+In high-frequency financial data, once the dominant trend is removed via first-differencing, the resulting series often approximates a **random walk** (@fig-diff-acf-pacf). Attempting to parameterize higher-order lags (such as p=12 or p=18) risks **over-fitting**the training data—capturing historical artifacts that are unlikely to repeat. By selecting simpler low-order ARIMA models, we reduce model variance and prioritize **out-of-sample forecast stability**.
+
+Consequently, the analysis will proceed with parsimonious, low-order candidates. We will evaluate **ARIMA(1,1,1)** as the candidate model.
 
 ## Extended Autocorrelation Function (EACF) {#sec-eacf}
 
-The EACF provides a supplementary order identification tool particularly useful when neither the ACF nor the PACF gives a clean cutoff pattern. It displays a triangular arrangement of symbols; an 'o' marks the upper-left corner of a white-noise triangle, indicating a candidate (p, q) combination.
+The EACF provides a supplementary order identification tool particularly useful when neither the ACF nor the PACF gives a clean cutoff pattern. The 'o' symbols in the EACF table identify the candidate ARMA(p,q) pairs consistent with a white-noise residual structure. For the first-differenced CBA series, the EACF matrix confirms the suitability of low-order specifications:
+
+-   **Candidate Identification:** The top-left vertex of the **white-noise** triangle is identified at **AR = 0, MA = 1**, identifying **ARIMA(0,1,1)** as the most parsimonious candidate.
+
+-   **Alternative Specifications:** A secondary **'o'** at the (1,1) position suggests **ARIMA(1,1,1)** as a viable alternative that captures both autoregressive and moving average dynamics.
+
+-   **Parsimony vs. Complexity:** Notably, the EACF shows a stable region of white noise starting at these low orders, effectively ignoring the isolated high-lag spikes previously noted in the ACF & PACF plots (@fig-diff-acf-pacf).
 
 ```{r stat-eacf}
 #| label: stat-eacf
@@ -1031,9 +1053,27 @@ cat("=== EACF of First-Differenced CBA Price ===\n")
 eacf(diff_y_train, ar.max = 5, ma.max = 5)
 ```
 
-The 'o' symbols in the EACF table identify the candidate ARMA(p,q) pairs consistent with a white-noise residual structure. For CBA daily returns, we expect the EACF to support low-order specifications — consistent with the weak autocorrelation visible in @fig-diff-acf-pacf.
+For CBA daily returns, we expect the EACF to support low-order specifications — consistent with the weak autocorrelation visible in @fig-diff-acf-pacf. EACF results align with our previous ACF & PACF analysis; by selecting the vertex at (0,1), we avoid the risk of over-fitting historical artifacts.
+
+Consequently, **ARIMA(0,1,1)** and **ARIMA(1,1,1)** are retained as the candidate models for model fitting.
 
 ## BIC Subset Selection {#sec-bic}
+
+@fig-bic-subsets complements the EACF findings by applying an exhaustive OLS-based search across AR and MA order combinations. The lowest-BIC rows (top of the plot) identify the models that best balance fit and parsimony. Shaded cells highlight the specific AR and MA parameters retained at each order level.
+
+Looking at the **BIC subset selection table** (@fig-bic-subsets ), we can statistically rank our candidate models. The Bayesian Information Criterion (BIC) is a "strict judge"—it significantly penalizes extra parameters to prevent over-fitting.
+
+-   **Top Row (Lowest BIC = 11):** The best-performing model according to BIC is **ARIMA(1,1,0)**. The shaded box for **p-lag1** indicate that only the first-order autoregressive term is necessary to minimize information loss.
+
+-   **Second Row (BIC = 16):** This represents a **5,1,0** structure (shaded boxes at **p-lag1** and **p-lag5**). This model captures that isolated Lag-5 spike we previously discussed. However, it comes with a "penalty cost," raising the BIC from 11 to 16.
+
+-   While **ARIMA(5,1,0)** captures a potential weekly 5 day-trading-cycle (Lag 5), it is rejected in favor of the more parsimonious **ARIMA(1,1,0)** for the following reasons:
+
+    -   **The BIC Gap:** A jump in BIC from **11 to 16** is substantial. Generally, a difference greater than 2-6 is considered strong evidence that the lower-BIC model (1,1,0) is superior.
+
+    -   **Risk of Over-fitting:** Given the high efficiency of the ASX, weekly cycles are often transient artifacts rather than permanent structural features. The 5,1,0 model is "chasing" a specific historical bump at Lag 5. In the highly efficient ASX market, there is no guarantee that a 5-day cycle observed in the training data will persist in the 30-day forecast period. The 1,1,0 model is more "robust" and less likely to fail if that specific cycle disappears.
+
+    -   **Parsimony:** Our goal is a "lean" model. Since the BIC table confirms that adding Lag 5 actually *worsens* the overall model quality (by increasing the BIC score), the extra complexity isn't mathematically "paying for itself."
 
 ```{r fig-bic-subsets}
 #| label: fig-bic-subsets
@@ -1048,11 +1088,11 @@ res_bic <- armasubsets(y      = diff_y_train,
 plot(res_bic)
 ```
 
-@fig-bic-subsets complements the EACF findings by applying an exhaustive OLS-based search across AR and MA order combinations. The lowest-BIC rows (bottom of the plot) identify the models that best balance fit and parsimony. Shaded cells highlight the specific AR and MA parameters retained at each order level.
+@fig-bic-subsets complements the EACF findings by applying an exhaustive OLS-based search across AR and MA order combinations. Consequently, **ARIMA(1,1,0)** is retained as the candidate models for model fitting.
 
 ## Candidate Model Selection
 
-Synthesising the evidence from @fig-diff-acf-pacf, the EACF table, and @fig-bic-subsets, we identify four candidate models for estimation and residual evaluation:
+Synthesising the evidence from @fig-diff-acf-pacf, the EACF table, and @fig-bic-subsets, we identify 3 candidate models for estimation and residual evaluation:
 
 ```{r stat-candidates}
 #| label: stat-candidates
@@ -1064,9 +1104,9 @@ candidates_df <- data.frame(
                               "BIC",
                               "EACF, ACF & PACF"),
   "Rationale"            = c(
-    "ACF spike at lag 1 followed by cutoff suggests MA(1) captures the lingering one-period impact of short-term shocks — e.g., a surprise RBA rate decision that fades within one trading day.",
-    "PACF spike at lag 1 with subsequent cutoff implies AR(1): today's return is partially predictable from yesterday's return, consistent with short-term momentum in CBA.",
-    "When both ACF and PACF show partial spikes at lag 1, a mixed ARMA(1,1) captures both momentum (AR) and shock-persistence (MA) simultaneously."
+    "Captures the one-period impact of short-term shocks. This implies that market news (e.g., an RBA rate change) is absorbed quickly, with only a one-day residual effect on price adjustments.",
+    "Models short-term momentum or mean reversion. This assumes today’s CBA return is a partial function of yesterday’s return, reflecting consistent institutional buying or selling pressure.",
+    "A flexible mixed model that accounts for both momentum (AR) and shock-persistence (MA). This is the most complete low-order specification for complex financial series."
   ),
   check.names = FALSE
 )
@@ -1081,7 +1121,9 @@ kbl(candidates_df,
   column_spec(3, width = "8cm")
 ```
 
-Each candidate represents a distinct structural hypothesis about how CBA's daily price changes are generated: pure shock-persistence (MA), pure momentum (AR), a combination (ARMA), and a higher-order BIC selection. Comparing all four through rigorous residual diagnostics and information criteria ensures that the final model selection is evidence-based rather than arbitrary.
+Each candidate represents a distinct structural hypothesis regarding the generation of CBA’s daily price changes: pure shock-persistence (MA), pure momentum (AR), or a combination (ARMA). In accordance with the **Principle of Parsimony**, we prioritize these three low-order models to minimize the risk of over-fitting historical artifacts.
+
+These candidates will now proceed to the **Model Fitting and Parameter Estimation** phases. 
 
 # Model Fitting
 
