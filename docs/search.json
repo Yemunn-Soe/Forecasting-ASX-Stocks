@@ -9,7 +9,7 @@
   {
     "objectID": "about.html",
     "href": "about.html",
-    "title": "So What?",
+    "title": "About",
     "section": "",
     "text": "I’m an analytics professional with over seven years of experience turning complex data into clear, actionable insights. That experience taught me a crucial lesson: technical fluency is meaningless without a deep understanding of the problem, operational logic, and cross-functional collaboration. A reliable system isn’t just about clean code or automated pipelines—it’s built on communication and a shared understanding of the goal.\nMy work has always been driven by a single question: How can information systems create tangible, positive impact for people with the least margin for error?"
   },
@@ -338,35 +338,35 @@
   {
     "objectID": "about.html#about-me",
     "href": "about.html#about-me",
-    "title": "So What?",
+    "title": "About",
     "section": "",
     "text": "I’m an analytics professional with over seven years of experience turning complex data into clear, actionable insights. That experience taught me a crucial lesson: technical fluency is meaningless without a deep understanding of the problem, operational logic, and cross-functional collaboration. A reliable system isn’t just about clean code or automated pipelines—it’s built on communication and a shared understanding of the goal.\nMy work has always been driven by a single question: How can information systems create tangible, positive impact for people with the least margin for error?"
   },
   {
     "objectID": "about.html#why-this-project",
     "href": "about.html#why-this-project",
-    "title": "So What?",
+    "title": "About",
     "section": "2 Why This Project?",
     "text": "2 Why This Project?\nThis project was born out of my strong interest in finance, statsitics, time series analysis forecasting and modelling. It started with my professors, gained momentum from a book, and came to life through a workshop.\nDr Haydar Demirhan at RMIT University, whose teaching and encouragement pushed me to tackle a real-world forecasting project. He taught me something I’ll never forget: AI can generate statistical output, but it cannot replicate human judgment. It cannot interpret evidence, weigh competing models, or make the informed decisions that drive genuine analysis forward.\nAround the same time, a former manager handed me a book that would become my practical bible Forecasting: Principles and Practice (3rd ed.) by Rob J Hyndman and George Athanasopoulos (FPP3), practical guide to time series forecasting.\nThen came the moment that truly opened my eyes. I attended a workshop organised by Professor Hyndman’s PhD student Mitchell O’Hara-Wild’s “Forecasting with fable” at WOMBAT 2025 (workshop link). That session opened my eyes to the power of modern forecasting tools in R, especially the fable ecosystem.\nThis project is the intersection of everything I’ve learned: statistical rigour, practical tools, and the human judgment in this process."
   },
   {
     "objectID": "about.html#project-goal",
     "href": "about.html#project-goal",
-    "title": "So What?",
+    "title": "About",
     "section": "3 Project Goal",
     "text": "3 Project Goal\nI chose to forecast ASX stocks for one reason: financial markets are challenging, dynamic, and full of fascinating patterns.\nThis site is my attempt to: - Apply the methods I’ve learned - Share reproducible analysis with Quarto and R - Build a portfolio that proves my skills in forecasting and data science"
   },
   {
     "objectID": "about.html#tools-technologies",
     "href": "about.html#tools-technologies",
-    "title": "So What?",
+    "title": "About",
     "section": "4 Tools & Technologies",
     "text": "4 Tools & Technologies\n\nR and Quarto for reproducible reporting and this website\nGitHub Pages for hosting"
   },
   {
     "objectID": "about.html#lets-connect",
     "href": "about.html#lets-connect",
-    "title": "So What?",
+    "title": "About",
     "section": "5 Let’s Connect",
     "text": "5 Let’s Connect\n\nMy LinkedIn\nGitHub repository for this project\n\nThanks for visiting!"
   },
