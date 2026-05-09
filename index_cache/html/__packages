@@ -15,3 +15,9 @@ tseries
 lmtest
 knitr
 kableExtra
+tidyverse
+tibble
+readr
+stringr
+forcats
+lubridate
