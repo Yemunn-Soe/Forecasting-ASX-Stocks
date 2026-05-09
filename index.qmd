@@ -365,7 +365,7 @@ plot_forecast_comparison <- function(forecast_list, y_train, y_test,
        xlab = "Time", ylab = "Price (AUD)", main = title, ylim = ylim_range)
   grid(col = "lightgray")
   lines(as.numeric(time(y_train)), as.numeric(y_train), col = "black", lwd = 2)
-  lines(as.numeric(time(y_test)),  as.numeric(y_test),  col = "red",   lwd = 2, lty = 2)
+  lines(as.numeric(time(y_test)),  as.numeric(y_test),  col = "red",   lwd = 2)
   pal <- c("blue", "darkgreen", "purple", "darkorange",
            "brown", "deeppink", "cyan4", "navy", "tomato")
   for (i in seq_along(forecast_list)) {
