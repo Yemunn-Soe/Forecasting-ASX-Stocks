@@ -3,22 +3,22 @@ project:
   output-dir: docs
 
 website:
-  title: "Forecasting ASX Stocks"
+  title: "SARIMA Modeling of Australian Wool Trade Cycles"
   site-url: "https://Yemunn-Soe.github.io/Forecasting-ASX-Stocks"
   repo-url: "https://github.com/Yemunn-Soe/Forecasting-ASX-Stocks"
   repo-actions: [edit, issue]
   navbar:
     left:
-      - href: index.qmd
+      - href: Wool_Trade_SARIMA.qmd
         text: Analysis
-      - href: about.qmd
+      - href: About.qmd
         text: So What
     right:
       - icon: linkedin
         href: "https://www.linkedin.com/in/yemunn-soe/"
         aria-label: LinkedIn
       - icon: github
-        href: "https://github.com/Yemunn-Soe/Forecasting-ASX-Stocks"
+        href: "https://github.com/Yemunn-Soe/Forecasting-Wool-Trade-with-SARIMA"
         aria-label: GitHub
 
 format:
